@@ -1,6 +1,6 @@
-# Testing
+# Testing Plan
 
-## Backend
+## Current foundation checks
 
 From `backend/` with the virtual environment active:
 
@@ -11,14 +11,36 @@ python manage.py migrate --check
 python manage.py test
 ```
 
-The database check requires a running MySQL server and valid `.env` credentials.
-
-## Frontend
+The database checks require a running MySQL server and valid local `.env` credentials. The current automated backend suite contains a health endpoint test; it does not validate planned catalog/enquiry behavior.
 
 From `frontend/`:
 
 ```powershell
+npm run lint
 npm run build
 ```
 
-The production build validates compilation and asset bundling. Record actual Phase 0 command results in [PROJECT_STATUS.md](../PROJECT_STATUS.md).
+## Proposed tests before public launch
+
+### Backend
+
+- Catalog query/serializer tests: active-only visibility, category filtering, stable slug lookup, unpublished/missing product handling.
+- Enquiry serializer/service tests: each intent, required/optional fields, bounds/format checks, rejected unknown/inactive products, multi-item behavior if approved, and transactional rollback on failed item insert.
+- API tests: success/status/error contract, anonymous access limited to public operations, no enquiry read/list exposure, and no leakage of internal fields.
+- Security/abuse tests: configured rate limiting, oversized body rejection, generic server errors, logging redaction, CSRF/session policy, and exact-origin CORS behavior.
+- Admin tests: permissions for catalog and enquiry status changes; unauthorized staff cannot read/update enquiries.
+- MySQL integration tests on the supported MySQL version and collation; migration forward test and backup/restore rehearsal.
+
+### Frontend
+
+- Route and not-found behavior; loading, empty, and error states for catalogue content.
+- Product category navigation and product-to-enquiry prefill.
+- Accessible form labels, keyboard use, focus/error announcements, validation, pending/success/failure states.
+- Responsive viewport tests, image alternatives/captions, contrast and reduced-motion behavior.
+- API contract tests, with no customer PII in client logs or analytics.
+
+### Release checks
+
+Run dependency/security scanners and static checks, review secrets/artifacts, test production configuration with `DEBUG=false`, and verify HTTPS, cookies, headers, CORS/CSRF, rate limits, logs, retention and restores in the deployed environment. No planned feature should be described as tested until its tests exist and pass.
+
+The visual brief and API contract are planning only; this phase does not add feature tests or code.

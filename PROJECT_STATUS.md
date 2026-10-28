@@ -1,8 +1,10 @@
 # Project Status
 
-## Phase 0: project bootstrap
+## Project status
 
-**Status:** Phase 0 foundation complete and re-verified.
+**Phase 0 — foundation:** Complete and previously verified.
+
+**Phase 1 — requirements and architecture:** Documentation complete. No application, API, schema, package, or database changes were made. Owner confirmation is still required for business facts and launch operations listed below; Phase 2 must wait for explicit approval.
 
 ### Environment
 
@@ -18,6 +20,29 @@
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
 - Local Git `main` branch initialized with the supplied GitHub URL as `origin`.
+
+### Phase 1 planning deliverables
+
+- [Business requirements](docs/BUSINESS_REQUIREMENTS.md): audience, goals, non-goals, six requested product-category labels, buyer journeys and owner-confirmation register.
+- [Information architecture](docs/INFORMATION_ARCHITECTURE.md): lean sitemap, launch/deferred page recommendations, page sections, CTAs, data needs and mobile behavior.
+- [Application architecture](docs/ARCHITECTURE.md): current-vs-proposed boundaries, request/data flow, validation/error handling and deployment decisions.
+- [Database plan](docs/DATABASE.md): proposed catalog/enquiry entities and relationships; no schema was created.
+- [API plan](docs/API.md): proposed public read and enquiry contracts and protected admin boundary; no endpoint was added.
+- [Design system brief](docs/DESIGN_SYSTEM.md): owner-provided palette with editorial typography, photography, responsive and accessibility guidance; no visual implementation was added.
+- [Security](docs/SECURITY.md), [testing](docs/TESTING.md), [deployment](docs/DEPLOYMENT.md), [roadmap](docs/ROADMAP.md), and this status record updated to distinguish current controls from proposals.
+
+### Phase 1 verification
+
+| Check | Result |
+|---|---|
+| Markdown relative links | Passed; 14 Markdown files checked, no broken relative links |
+| Django `check` | Passed; no issues |
+| Django `check --database default` | Passed |
+| Django `migrate --check` | Passed; no pending migrations |
+| Django backend tests | Passed; 1 test |
+| Application/schema/dependency changes | None; Phase 1 is documentation only |
+| `.env` | Ignored and untracked; secret values were not printed or included in documentation |
+| GitHub | Only the reviewed Phase 1 documentation files are staged; compare remote `main` after push |
 
 ### Verification results
 
@@ -41,6 +66,21 @@
 
 No database, account, password, or grant was changed during this fix. `woodhub_db` was not accessed or changed. `.env` remains ignored; no secret values were printed, staged, committed, or pushed.
 
-### Outcome
+### Phase 1 decisions and proposals
 
-The authentication issue was caused by differing credentials for the two MySQL host-specific accounts, not an incorrect password in `.env`: the supplied password matches `spiceora_app`@`localhost`, while Django had selected `spiceora_app`@`127.0.0.1`. Changing only `DB_HOST` in the ignored local `.env` fixed the connection. Django checks, connection verification, migration checks, and backend tests now pass. Phase 1 must not begin until explicitly approved.
+- **Confirmed by owner brief:** premium customer-facing Indian spice-export B2B website; target buyers are international B2B buyers, importers, distributors, wholesalers and related business customers; working tagline “From Indian Origins to Global Markets.”; requested categories Cumin, Fennel, Red chilli, Turmeric, Coriander, Dhana-jeera; existing React/Vite, Django REST Framework and MySQL stack.
+- **Proposed:** lean multi-page catalogue and enquiry website; combine contact/export/quotation intents into one buyer form; no account, checkout, dashboard, ERP or marketplace; publish only active, owner-approved products; prefer same-origin deployment; use Django admin for protected staff operations; add multi-product enquiry items only if owner confirms the need.
+- **Original design direction:** editorial export-house identity using the requested forest green `#203B30`, warm ivory `#F7F3E9` and muted gold `#C49A55`, real rights-cleared imagery, deliberate typography and restrained motion.
+
+### Owner confirmation required before implementation/content launch
+
+- Legal/display company identity and public contact details.
+- Actual available products per category; product descriptions, images, origin/specification/quality statements and any certifications or proof.
+- Export markets/process, documents, packaging, quantities, incoterms, shipping, payment, pricing, lead times and response expectations.
+- Enquiry field requiredness, single/multi-product quote behavior, recipient/staff workflow and retention/deletion policy.
+- Applicable privacy jurisdiction, controller, lawful basis, notice, hosting/data region and user-rights process.
+- Brand assets, image/font licensing, language/currency needs, domain, hosting provider and operational owners.
+
+## Phase 1 outcome
+
+Phase 1 deliverables are documented as decisions, proposals and open owner questions. Product pages, product/enquiry endpoints, schema changes, package changes and business features have not been implemented. Wait for explicit owner approval before Phase 2.

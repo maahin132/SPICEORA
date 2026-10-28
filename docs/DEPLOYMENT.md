@@ -1,12 +1,21 @@
-# Deployment
+# Deployment Plan
 
-Phase 0 configures local development only; no hosting provider, CI/CD pipeline, or production topology is selected.
+## Current state
 
-For a future deployment:
+Phase 0 configures local development only. No hosting provider, production domain, production database, CI/CD pipeline, or production topology is selected.
 
-1. Provision a managed MySQL database and a dedicated least-privilege account.
-2. Inject strong Django secret and database credentials using the platform's secret manager.
-3. Set `DJANGO_DEBUG=false`, explicit `DJANGO_ALLOWED_HOSTS`, and production CORS origins.
-4. Build the frontend with `npm run build` and serve its static assets over HTTPS.
-5. Run Django migrations as a controlled release step and serve the API behind a production WSGI/ASGI server.
-6. Configure TLS, backups, logging, monitoring, and restore procedures.
+## Proposed launch topology
+
+Prefer a same-origin HTTPS deployment: serve the Vite production assets through a CDN/static origin and proxy `/api/` to Django behind a production WSGI/ASGI server. Use managed MySQL on a private network where available. Select a separate frontend/API origin only if needed and configure exact CORS/CSRF trust boundaries.
+
+## Release requirements
+
+1. Select the hosting/data regions, domain, DNS, email delivery, media handling and support ownership.
+2. Inject unique Django and database credentials via the platform secret manager; set `DEBUG=false` and explicit hosts/origins.
+3. Build frontend assets with `npm run build`; do not place secrets in frontend build-time variables.
+4. Run reviewed Django migrations as a controlled release step using least-privilege migration credentials.
+5. Terminate TLS; configure secure cookies, trusted proxy/header behavior, HSTS and security headers for the selected infrastructure.
+6. Configure encrypted automated backups, access-restricted logs, monitoring/alerts, restore drills, rollback and incident processes.
+7. Verify enquiry routing, privacy notice, data retention/deletion and staff admin access before collecting personal information.
+
+These are recommendations, not current controls. No deployment should be represented as production-ready until implemented and verified.

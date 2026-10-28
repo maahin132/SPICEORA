@@ -1,41 +1,31 @@
 # SPICEORA
 
-SPICEORA is a web application foundation with a React/Vite frontend and a Django REST backend.
+SPICEORA is planned as a premium, customer-facing Indian spice-export business website for international B2B buyers, importers, distributors, wholesalers, and related business customers. It is not a SaaS dashboard, ERP, marketplace, or generic landing-page product.
 
-## Requirements
+**Working tagline:** “From Indian Origins to Global Markets.”
 
-- Node.js 20.19+ (or 22.12+) and npm
-- Python 3.12
-- MySQL 8.0, running locally
+The current repository is the Phase 0 technical foundation. The frontend is still a placeholder, and the backend currently exposes only its health endpoint and Django admin. Phase 1 records approved direction and proposals; it does not implement business pages, product APIs, enquiry handling, or a business data model.
 
-## Local setup
+## Current stack
 
-1. Copy `.env.example` to `.env` and set a unique Django secret key and local MySQL password. `.env` is ignored by Git.
-2. Create and activate the backend environment, install dependencies, and prepare the database:
+- Frontend: React, JavaScript/JSX, Vite, Tailwind CSS, React Router, Lucide React
+- Backend: Python, Django, Django REST Framework
+- Database: MySQL
+- Local secrets: root `.env`, ignored by Git; use `.env.example` as the template
 
-   ```powershell
-   cd backend
-   py -3.12 -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   python -m pip install -r requirements.txt
-   python manage.py check
-   python manage.py migrate
-   python manage.py check --database default
-   python manage.py runserver
-   ```
+## Local development
 
-   The health endpoint is `http://127.0.0.1:8000/api/health/`.
+See the [Phase 0 setup](./PROJECT_STATUS.md) and [testing guide](./docs/TESTING.md). The frontend and backend currently run as separate development servers. The `/api/health/` route is a liveness check, not a product API or database-readiness endpoint.
 
-3. In a separate terminal, install and run the frontend:
+## Phase 1 planning documents
 
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
+- [Business requirements](./docs/BUSINESS_REQUIREMENTS.md)
+- [Information architecture and journeys](./docs/INFORMATION_ARCHITECTURE.md)
+- [Application architecture](./docs/ARCHITECTURE.md)
+- [Database plan](./docs/DATABASE.md)
+- [API plan](./docs/API.md)
+- [Visual design brief](./docs/DESIGN_SYSTEM.md)
+- [Security plan](./docs/SECURITY.md)
+- [Roadmap](./docs/ROADMAP.md)
 
-   Create a production build with `npm run build`.
-
-## Project status
-
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the actual bootstrap verification results and any local setup blockers. The frontend is a placeholder shell only; product pages and features are intentionally out of scope for Phase 0.
+Decisions required from the owner are labelled **Owner confirmation required**. No company facts, product specifications, certifications, customer evidence, or commercial promises should be published without verification.

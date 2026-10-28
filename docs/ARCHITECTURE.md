@@ -1,13 +1,73 @@
-# Architecture
+# Application Architecture
 
-## Phase 0 foundation
+## Status and decision labels
 
-- `frontend/`: JavaScript/JSX single-page application built with React and Vite. Tailwind CSS provides utility styling, React Router provides client-side routes, and Lucide React supplies icons.
-- `backend/`: Django project with Django REST Framework. The API is namespaced under `/api/`; `/api/health/` provides a minimal liveness response.
-- MySQL: local development database configured exclusively through environment variables.
+- **Existing foundation:** verified in the repository after Phase 0.
+- **Phase 1 proposal:** planned boundary or behavior; not implemented.
+- **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-The frontend and backend run as separate development servers. The frontend development server proxies `/api` requests to Django. No production hosting or product-domain model is configured in Phase 0.
+The application implementation remains unchanged in Phase 1. The current backend has Django admin and `GET /api/health/`; the React app is a placeholder shell. Product, contact, and enquiry features described here are plans only.
 
-## Configuration and trust boundaries
+## Existing foundation
 
-Secrets and machine-specific settings live in the untracked root `.env`. Django reads those settings at startup. CORS is restricted to configured origins. Production deployment must set `DJANGO_DEBUG=false`, define explicit allowed hosts, use TLS, and supply strong secrets through the hosting platform.
+- `frontend/`: React JavaScript/JSX SPA built with Vite. Tailwind CSS is available for styling, React Router for route composition, and Lucide React for interface icons.
+- `backend/`: Django + Django REST Framework project. Django loads local settings from root `.env`.
+- MySQL: local development database configured through environment variables.
+- Development data flow: Vite proxies `/api` requests to Django. No product or enquiry API currently exists.
+
+## Proposed production architecture
+
+Prefer a same-origin public website deployment: serve the compiled React assets and `/api/` through one HTTPS origin, with Django behind a production application server and a managed MySQL instance. This simplifies browser security policy and avoids broad CORS. A separate frontend/API origin is possible only when the deployment owner approves it and exact origins are configured.
+
+```text
+Buyer browser
+  ├─ React route/page components
+  ├─ reusable presentation and form components
+  └─ typed-by-convention JS API client
+       └─ HTTPS /api/v1/* → Django REST Framework
+                             ├─ public read serializers/views
+                             ├─ public enquiry validation/service
+                             ├─ protected Django admin
+                             └─ MySQL
+```
+
+### Frontend component boundaries — proposal
+
+- **App shell:** shared header, navigation, footer, route error/not-found states.
+- **Route pages:** Home, Products catalogue, Product detail, Contact & export enquiry, and Privacy. Optional About and Export process pages should only be split out when verified content exists.
+- **Product presentation:** category navigation, product list, product detail sections, image/caption, and contextual enquiry links. Product facts come from published API data, not hardcoded invented claims.
+- **Enquiry flow:** validated form, selected-product summary, accessible field errors, pending state, success confirmation, and retry-safe failure state. Do not promise a response time unless approved.
+- **API client:** one module for URL construction, JSON parsing, timeouts, and consistent error mapping. Components should not duplicate fetch/error logic.
+- **Design primitives:** content width, spacing, typography, button, form field, notice, and image-caption patterns following the [design brief](./DESIGN_SYSTEM.md).
+
+### Backend component boundaries — proposal
+
+- **Catalog read API:** serializers expose only active, publishable categories and products.
+- **Enquiry API:** one public create operation for contact, export enquiries, and quotation requests; validate and persist the enquiry plus optional selected products in a transaction.
+- **Admin:** Django admin for staff to maintain catalog records and triage enquiries. No public admin API or buyer accounts in launch scope.
+- **Domain validation:** enforce field lengths, allowed enquiry type, product eligibility, and consistency on the server even when client-side validation exists.
+- **Operational boundary:** email notifications, file uploads, CRM sync, and analytics are not assumed. Add them only after a real owner workflow and retention/security design are approved.
+
+## Request and error flow
+
+1. The page requests public catalogue data over same-origin `/api/v1/`.
+2. The API returns only records marked active/published; empty catalogues have a clear editorial state rather than invented products.
+3. The browser sends an enquiry with an explicit intent and optional product selections.
+4. The server validates, rate-limits, persists atomically, and returns a non-sensitive reference/confirmation.
+5. The UI shows field-level validation errors for correctable input; network/server failures receive a generic retry message and a correlation identifier when available. Never display stack traces, SQL, or internal exception text.
+
+Use a consistent JSON error envelope and appropriate HTTP status codes. Distinguish invalid fields (400), rate limiting (429), missing public resources (404), and unexpected failures (500). Do not treat a failed notification as a failed database write without an explicit outbox/retry design.
+
+## Configuration and deployment
+
+Keep `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, database credentials, allowed origins, and any future rate limits in environment-specific secret/configuration stores. Never place secrets in frontend build variables, source control, or browser responses. Production requires HTTPS, a production WSGI/ASGI server, controlled migrations, static/media storage policy, backups, logs/alerts, restore tests, and a documented rollback plan. Hosting provider and topology require owner approval.
+
+## Deferred choices
+
+- Hosting provider, domain, DNS, CDN/WAF, storage and email delivery
+- Whether content is managed in Django admin or a separate workflow
+- Whether a separate API origin is necessary
+- Product images/CMS, search, localization, and currency handling
+- Enquiry notifications, retention schedule and operational response process
+
+Related plans: [database](./DATABASE.md), [API](./API.md), [security](./SECURITY.md), and [deployment](./DEPLOYMENT.md).
