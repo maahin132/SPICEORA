@@ -33,7 +33,7 @@
 | Django MySQL connection check | Blocked: `spiceora_app` denied access with no password |
 | Django initial migrations | Not run; gated on successful database authentication |
 | Database creation / least-privilege grant | Not performed; local `root` also denied passwordless access |
-| GitHub push | Passed; remote `main` matches initial commit `5a399d10ad629f47c26bce759b13f6d2454cbd8b` |
+| GitHub push | Passed; initial foundation commit `5a399d10ad629f47c26bce759b13f6d2454cbd8b` and status update are pushed; remote `main` matches the latest status commit |
 
 No database was modified. In particular, `woodhub_db` was not accessed or changed. The existence of `spiceora_db` could not be established without MySQL administrative access.
 
