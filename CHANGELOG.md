@@ -12,4 +12,4 @@ All notable project changes are recorded here.
 - MySQL database `spiceora_db` and local app user `spiceora_app` were created and database access was verified.
 - Django migrations and database connectivity checks passed after correcting the host-specific MySQL account configuration.
 - Initial commit and subsequent status updates were pushed and verified on GitHub.
-- 2026-10-28 re-verification: backend test passed (1 test); MySQL rejected the updated `spiceora_app` credentials with error 1045, so migrations were not rerun. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+- 2026-10-28: Diagnosed MySQL 1045 as different credentials for the `localhost` and `127.0.0.1` app accounts. Updated only ignored local `.env` to use `DB_HOST=localhost`; Django connection checks passed, migrations were current, and backend tests passed (1 test). No database, account, password, or grant was changed. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
