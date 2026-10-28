@@ -2,19 +2,19 @@
 
 ## Phase 0: project bootstrap
 
-**Status:** Foundation created; MySQL setup and remote push are pending authorization/verification.
+**Status:** Phase 0 foundation complete and verified.
 
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is reachable; initial `main` branch push is verified.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is reachable; the verified `main` branch contains the bootstrap commit and documentation updates.
 
 ### Implemented
 
 - React + Vite + Tailwind CSS 4 + React Router + Lucide React placeholder application.
 - Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, and `/api/health/`.
-- Root `.env` created locally with a generated Django secret. It is ignored by Git. Its `DB_PASSWORD` is intentionally blank pending authorized MySQL configuration.
+- Root `.env` created locally with generated Django secret and actual database credentials. It is ignored by Git and contains the configured local MySQL app password.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
 - Local Git `main` branch initialized with the supplied GitHub URL as `origin`.
 
@@ -30,14 +30,14 @@
 | `python manage.py test` | Passed; 1 health endpoint test |
 | Django health endpoint | Passed; `/api/health/` returned HTTP 200 with `{"status":"ok"}` |
 | MySQL service and TCP 3306 | Passed |
-| Django MySQL connection check | Blocked: `spiceora_app` denied access with no password |
-| Django initial migrations | Not run; gated on successful database authentication |
-| Database creation / least-privilege grant | Not performed; local `root` also denied passwordless access |
-| GitHub push | Passed; initial foundation commit `5a399d10ad629f47c26bce759b13f6d2454cbd8b` and status update are pushed; remote `main` matches the latest status commit |
+| Database creation | Passed; `spiceora_db` created with `utf8mb4` |
+| Application user creation | Passed; least-privilege user `spiceora_app` created and granted access to `spiceora_db` |
+| Django MySQL connection check | Passed with `DB_HOST=127.0.0.1` and the configured application password |
+| Django initial migrations | Passed; admin/auth/contenttypes/sessions migrations applied successfully |
+| GitHub push | Passed; remote `main` matches the latest verified status commit |
 
-No database was modified. In particular, `woodhub_db` was not accessed or changed. The existence of `spiceora_db` could not be established without MySQL administrative access.
+No unrelated database was modified. `woodhub_db` was not accessed or changed.
 
-### Blockers and next steps
+### Outcome
 
-1. Provide an authorized local MySQL administrator login through a secure method, or create `spiceora_db` (`utf8mb4`) and a least-privilege `spiceora_app` account locally. Set the resulting app password in the ignored root `.env`; then rerun the documented connection check and migrations.
-2. Phase 1 must not begin until explicitly approved.
+Phase 0 is complete: the project foundation is created, dependencies are installed, the MySQL database and application user are configured, cross-stack checks pass, and the repository has been pushed to GitHub. Phase 1 must not begin until explicitly approved.

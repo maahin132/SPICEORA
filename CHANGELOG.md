@@ -9,4 +9,6 @@ All notable project changes are recorded here.
 - Added project architecture, API, database, security, testing, deployment, and roadmap documentation.
 - Added GitHub issue and pull request templates.
 - Frontend production build/lint and Django system check/health endpoint test passed; both frontend and Django health endpoints returned HTTP 200.
-- Initial commit pushed and verified on GitHub. MySQL migrations remain blocked as detailed in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+- MySQL database `spiceora_db` and local least-privilege app user `spiceora_app` were created and verified.
+- Django migrations and database connectivity checks passed after correcting the host-specific MySQL account configuration.
+- Initial commit and subsequent status updates were pushed and verified on GitHub.
