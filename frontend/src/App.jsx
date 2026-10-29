@@ -1,7 +1,9 @@
-import { Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import SiteFooter from './components/SiteFooter.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import HomePage from './pages/HomePage.jsx'
+import ProductDetailPage from './pages/ProductDetailPage.jsx'
+import ProductsPage from './pages/ProductsPage.jsx'
 
 function App() {
   return (
@@ -12,15 +14,17 @@ function App() {
       <SiteHeader />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/products/" element={<ProductsPage />} />
+        <Route path="/products/:slug/" element={<ProductDetailPage />} />
         <Route
           path="*"
           element={
             <main className="not-found-page" id="main-content">
               <p className="eyebrow">SPICEORA</p>
               <h1>That page is not here yet.</h1>
-              <a className="text-link" href="/">
+              <Link className="text-link" to="/">
                 Return to the homepage
-              </a>
+              </Link>
             </main>
           }
         />

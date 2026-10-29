@@ -16,14 +16,16 @@ Before implementation approval, resolve the owner confirmations in [business req
 
 The category cards are illustrative, and the enquiry section is a non-submitting placeholder. Catalogue/detail pages, enquiry submission, business APIs and schema changes remain out of scope.
 
-## Phase 3 — catalog and enquiry implementation (not started)
+## Phase 3 — product catalogue and read API
 
-Only after explicit owner approval and the owner confirmations below:
+**Implemented:** separate product category/product models; six category labels without product records; staff catalogue management in Django admin; active-only category and published product read APIs; pagination and category filtering; responsive React catalogue and product detail routes; API loading, empty, error, and not-found states.
 
-- Add the confirmed catalog and enquiry data model, migrations, public APIs and protected staff workflow.
-- Implement catalogue/product pages and the approved enquiry journey with launch-grade validation, abuse controls, privacy handling, tests and deployment controls.
-- Populate only owner-verified copy, product information, imagery and business claims.
+No product/demo records, product availability claims, or unverified product facts were added. Enquiry, quotation, contact submission, and payments are not part of this phase.
+
+## Phase 4 — enquiry planning and implementation (not started)
+
+Proceed only after owner/legal confirmation of contact fields, recipient workflow, privacy notice/jurisdiction, retention, multi-product behavior, and abuse-response operations. Then implement the approved data model, protected staff workflow, validated/rate-limited public submission endpoint, and accessible frontend submission states.
 
 ## Deferred / only if justified
 
-Localization, search, multiple currencies, CRM integration, file upload, buyer accounts, analytics, custom admin dashboards, and advanced catalog filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.
+Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

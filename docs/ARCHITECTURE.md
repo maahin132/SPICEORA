@@ -6,16 +6,25 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. The current backend still has Django admin and `GET /api/health/` only; no product/contact/enquiry API or database entities exist. The enquiry section is an honest configuration placeholder and does not accept or send submissions.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public read-only catalogue API, and React catalogue/detail routes. Enquiry handling remains a non-submitting placeholder; no enquiry API or schema exists.
 
-The current homepage is built from `SiteHeader`, `HomePage`, `SiteFooter`, and local editorial image/section presentation components. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
+The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` and `useCatalogRequest.js` for public reads/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
 ## Existing foundation
 
 - `frontend/`: React JavaScript/JSX SPA built with Vite. Tailwind CSS is available for styling, React Router for route composition, and Lucide React for interface icons.
 - `backend/`: Django + Django REST Framework project. Django loads local settings from root `.env`.
 - MySQL: local development database configured through environment variables.
-- Development data flow: Vite proxies `/api` requests to Django. No product or enquiry API currently exists.
+- Development data flow: Vite proxies `/api` and `/media` requests to Django. `/api/v1/categories/` and `/api/v1/products/` expose only categories with published products and published products in active categories. Product detail uses `/api/v1/products/{slug}/`.
+- Product images are optional Django `ImageField` uploads; development media is served by Django only when `DEBUG` is enabled. Production media storage/CDN configuration remains future deployment work.
+
+### Phase 3 implementation boundaries
+
+- Product categories and products are managed only through authenticated Django admin; public APIs are read-only and `AllowAny`.
+- Products default to unpublished. Responses do not include internal IDs, publication flags, sort ordering, or timestamps.
+- The product list is page-number paginated (12 per page), optionally filtered by an active category slug. Unknown query parameters and invalid filters return structured 400 errors; unpublished/inactive detail slugs return 404.
+- No products are preloaded. Category label rows come from the owner brief and do not claim inventory or availability.
+- The frontend uses `VITE_API_BASE_URL` when set, otherwise `/api/v1`. Vite proxies `/api` and `/media` in development. No credential is exposed in Vite configuration.
 
 ## Proposed production architecture
 

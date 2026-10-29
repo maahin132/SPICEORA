@@ -2,35 +2,41 @@
 
 ## Current state
 
-**Existing:** MySQL 8.0 and Django connection configuration are part of the Phase 0 foundation. Django's built-in auth/admin/session migrations are applied. No SPICEORA product or enquiry tables exist in this phase.
+**Implemented:** MySQL 8.0 and Django connection configuration are part of the Phase 0 foundation. Django's built-in auth/admin/session migrations are applied. Phase 3 migration `api.0001_initial` adds `api_productcategory` and `api_product` to `spiceora_db`; it seeds the six owner-provided category labels and creates no product rows. The migration was applied and verified on 2026-10-29. No enquiry tables exist.
 
-**Phase 1:** This is a proposed logical model only. Do not create tables or migrations until Phase 2 is explicitly approved and the owner confirms the required business fields.
+The configured development connection was verified as `spiceora_db` at `localhost`. The two catalogue tables use MySQL collation `utf8mb4_0900_ai_ci`. No WoodHub or unrelated database was accessed or changed.
 
-## Proposed entities
+## Implemented catalogue entities
 
 ### `ProductCategory`
 
 - `id`: internal primary key
-- `slug`: unique stable URL identifier
-- `name`: approved display name
+- `slug`: unique stable identifier
+- `name`: unique category label
 - `sort_order`: editorial ordering
-- `is_active`: whether the category is published
+- `is_active`: staff-controlled category visibility
 
-Initial category labels provided by the owner: Cumin, Fennel, Red chilli, Turmeric, Coriander, Dhana-jeera. Their inventory availability and final editorial naming still require owner confirmation. A category record does not imply that products are currently available.
+Initial migration labels: Cumin, Fennel, Red chilli, Turmeric, Coriander, Dhana-jeera. These are category labels only and do not imply saleable product availability.
 
 ### `Product`
 
-- `id`
-- `category_id`: required FK to `ProductCategory` (protect referenced categories)
+- `id`: internal primary key
+- `category_id`: required FK to `ProductCategory`, protected from deletion while referenced
 - `slug`: unique stable URL identifier
-- `name`, `summary`, `description`: owner-approved editorial content
-- `is_active`: publication state
-- `sort_order`
-- `created_at`, `updated_at`
+- `name`, `summary`, `description`: staff-entered, owner-approved public content
+- `image`: optional Django `ImageField` stored under `MEDIA_ROOT/products/`; admin validation accepts JPG/JPEG/PNG/WebP up to 5 MiB
+- `image_alt`: required by model validation when an image is set
+- `is_published`: explicit public publication gate; defaults false
+- `sort_order`: editorial order
+- `created_at`, `updated_at`: timestamps
 
-Only add origin, grade, variety, processing, packaging, certifications, lab results, images, or other attributes when the owner supplies verified values and confirms that they should be public. Avoid an unvalidated JSON “specifications” bucket or price/MOQ promises.
+Only add origin, grade, variety, processing, packaging, certifications, lab results, or other attributes after the owner supplies evidence and confirms they should be public. No products or product claims were seeded.
+
+The Pillow dependency is used by Django's image validation. In development, Django serves uploads at `/media/`; Vite proxies that path to the backend. Production media hosting and delivery are not configured.
 
 ### `ExportEnquiry`
+
+**Future proposal only; not implemented.**
 
 - `id`: internal primary key
 - `public_reference`: opaque random identifier safe to show to the submitter; never an enumeration of internal records
@@ -58,18 +64,18 @@ Relationship: one enquiry may have zero or more enquiry items; an item can point
 
 ```text
 ProductCategory 1 ─── * Product
-ExportEnquiry   1 ─── * EnquiryItem (optional launch scope)
-Product         1 ─── * EnquiryItem (optional, nullable historical reference)
+ExportEnquiry   1 ─── * EnquiryItem (future proposal only)
+Product         1 ─── * EnquiryItem (future proposal only)
 ```
 
-Retire public products with `is_active=false`, not routine hard deletion. Public list/detail APIs must exclude inactive records; preserve historical enquiry snapshots. Restrict staff changes through Django admin permissions. Define any purge/anonymization workflow only after the retention policy and legal obligations are confirmed.
+Retire products by setting `is_published=false` or deactivating their category, not by routine deletion. Public catalogue endpoints exclude unpublished products and products in inactive categories. Django admin is the only catalogue write surface; public write endpoints do not exist.
 
 ## Data integrity and operational controls
 
-- Use `utf8mb4`; use database constraints for unique slugs, valid intent/status values, and required fields.
+- The configured MySQL connection uses `utf8mb4`; category and product slugs have unique constraints.
 - Apply enquiry plus item inserts in one transaction.
 - Store timestamps consistently in UTC.
-- Keep database migrations in Django; review and back up before production rollout.
+- Keep database migrations in Django; review and back up before production rollout. Phase 3's additive migration created only the two catalogue tables and inserted the six category labels.
 - Grant the runtime account only the permissions required for runtime and planned migrations. Do not run the application as MySQL administrator; consider a separate migration identity in production.
 - Do not store secrets in this schema. Keep credentials and Django secrets outside source control.
 

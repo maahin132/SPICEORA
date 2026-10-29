@@ -1,28 +1,52 @@
 # API Plan
 
-## Existing endpoint
+## Implemented read endpoints
 
-The only application API currently implemented is `GET /api/health/`, returning `{"status":"ok"}`. It indicates Django liveness only; it is not database readiness. All routes below are **Phase 1 proposals**, not implemented endpoints.
+`GET /api/health/` returns `{"status":"ok"}` as a liveness check; it is not database readiness.
 
-The Phase 2 homepage links to a visible enquiry placeholder only. It has no form, network submission, or customer data collection.
+The anonymous, read-only catalogue is implemented at `/api/v1/`. Only published products in active categories are exposed.
 
-## Proposed convention
+### `GET /api/v1/categories/`
 
-Use `/api/v1/` for the first business API version. JSON requests/responses use UTF-8. Public responses expose only approved, active catalog content and never include internal notes, private enquiry details, database identifiers intended for staff, or unpublished facts.
+Returns the active categories that currently contain published products, sorted by editorial order:
 
-### Public read endpoints
+```json
+[{"slug":"cumin","name":"Cumin"}]
+```
 
-| Method and path | Responsibility | Response |
-|---|---|---|
-| `GET /api/v1/categories/` | List active categories in editorial order | `[{id, slug, name}]` |
-| `GET /api/v1/products/` | List active products; optional `category` slug filter | Paginated `{results: [{slug, name, category, summary, image?, ...}]}` |
-| `GET /api/v1/products/{slug}/` | Read a single active product | `{slug, name, category, summary, description, approved_content...}` |
+The initial migration creates the six owner-provided category labels, but no products, so this endpoint currently returns an empty list.
 
-Do not return products or category labels merely because they exist in the database; require an explicit published/active state. Add pagination only as the catalogue grows; the response shape should remain stable.
+### `GET /api/v1/products/`
 
-### Public write endpoint
+Returns a paginated object with `count`, `next`, `previous`, and `results`:
 
-`POST /api/v1/enquiries/` accepts an anonymous contact, export enquiry, or quotation request. Proposed request:
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [{
+    "slug": "owner-approved-product-slug",
+    "name": "Owner-approved product name",
+    "category": {"slug": "cumin", "name": "Cumin"},
+    "summary": "Owner-approved concise description.",
+    "image": null,
+    "image_alt": ""
+  }]
+}
+```
+
+The page size is 12. `?page=<positive integer>` selects a page. Optional `?category=<active-category-slug>` filters results. Unknown or repeated query parameters, blank/invalid page values, and blank or unknown/inactive category slugs return `400` with an `errors` object. An out-of-range page returns `404`.
+
+### `GET /api/v1/products/{slug}/`
+
+Returns the public product fields directly: `slug`, `name`, `category`, `summary`, `image`, `image_alt`, and `description`. Missing, unpublished, and products whose category is inactive all return `404` without revealing publication state. Image URLs are absolute URLs when a file is present; absent images return `null`.
+
+Responses omit database IDs, publication flags, sort order, timestamps, and admin-only fields.
+
+## Future public write endpoint (not implemented)
+
+`POST /api/v1/enquiries/` is still a proposal for a later approved phase. It is not available, and the website does not collect or submit buyer data. Proposed request:
 
 ```json
 {

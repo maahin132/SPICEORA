@@ -1,19 +1,20 @@
 import { ArrowUpRight, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const navigation = [
-  { href: '#collection', label: 'Our spices' },
-  { href: '#about', label: 'About SPICEORA' },
-  { href: '#process', label: 'The enquiry path' },
+  { href: '/products/', label: 'Products' },
+  { href: '/#about', label: 'About SPICEORA' },
+  { href: '/#process', label: 'The enquiry path' },
 ]
 
 function NavigationLinks({ className, onNavigate }) {
   return (
     <nav aria-label="Main navigation" className={className}>
       {navigation.map((item) => (
-        <a href={item.href} key={item.href} onClick={onNavigate}>
+        <Link to={item.href} key={item.href} onClick={onNavigate}>
           {item.label}
-        </a>
+        </Link>
       ))}
     </nav>
   )
@@ -44,25 +45,25 @@ function SiteHeader() {
   return (
     <header className="site-header" id="top">
       <div className="header-inner">
-        <a
+        <Link
           aria-label="SPICEORA home"
           className="wordmark"
-          href="/"
+          to="/"
           onClick={closeMenu}
         >
           SPICEORA<span aria-hidden="true">.</span>
-        </a>
+        </Link>
 
         <NavigationLinks className="desktop-navigation" />
 
-        <a
+        <Link
           className="header-cta"
-          href="#enquiry"
+          to="/#enquiry"
           onClick={closeMenu}
         >
           Export enquiry
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
-        </a>
+        </Link>
 
         <button
           aria-controls="mobile-navigation"
@@ -90,10 +91,10 @@ function SiteHeader() {
           className="mobile-navigation"
           onNavigate={closeMenu}
         />
-        <a className="mobile-menu-cta" href="#enquiry" onClick={closeMenu}>
+        <Link className="mobile-menu-cta" to="/#enquiry" onClick={closeMenu}>
           Start an export enquiry
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
-        </a>
+        </Link>
       </div>
     </header>
   )

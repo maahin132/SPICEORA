@@ -28,3 +28,11 @@ All notable project changes are recorded here.
 - Added accessible mobile-menu behavior, responsive design tokens, keyboard focus styling, reduced-motion support, locally sourced and documented editorial imagery, and graceful image fallback.
 - No product detail/catalogue routes, enquiry submission, backend API, database schema, dependencies, or credentials were added or changed.
 - Verification results and known limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+## [Phase 3] - Product catalogue and read API
+
+- Added product/category models, staff admin management, image validation, and an additive migration that creates the catalogue tables and six owner-provided category labels without creating product records.
+- Added anonymous read-only category/product APIs, publication filtering, validated category filtering, pagination, and product detail lookup.
+- Added React catalogue/detail routes, API-driven homepage preview, and loading/empty/error/not-found states.
+- Added Pillow for Django product-image validation. Production media hosting and enquiry submission remain unimplemented.
+- Verification results, database target, test isolation, and remaining limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).

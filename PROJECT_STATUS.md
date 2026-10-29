@@ -8,6 +8,8 @@
 
 **Phase 2 — homepage and visual foundation:** Implemented and verified. Scope is limited to the public homepage, shared header/navigation/footer, visual tokens and responsive interactions. No product detail/catalogue route, working enquiry submission, business API, database schema, or backend application changes.
 
+**Phase 3 — product catalogue and read API:** Implemented. The database contains six owner-provided category labels and zero product records. Public API and frontend catalogue routes are functional; no enquiry submission, quotation workflow, authentication feature, or payment behavior was added.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
@@ -17,8 +19,9 @@
 
 ### Implemented
 
-- React + Vite + Tailwind CSS 4 + React Router + Lucide React placeholder application.
-- Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, and `/api/health/`.
+- React + Vite + Tailwind CSS 4 + React Router + Lucide React homepage, product catalogue, and product detail routes.
+- Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, `/api/health/`, and read-only `/api/v1/` catalogue endpoints.
+- Phase 3 `ProductCategory` and `Product` models, Django admin maintenance, published-only API serializers, and optional product image uploads.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
 - Local Git `main` branch initialized with the supplied GitHub URL as `origin`.
@@ -73,6 +76,39 @@
 | Markdown links and `git diff --check` | Passed; 15 Markdown files checked, no broken relative links |
 | Secrets | `.env` remains ignored/untracked; no secret values were added to frontend assets or staged documentation |
 
+### Phase 3 implementation
+
+- Added `ProductCategory` (unique name/slug, display order, active state) and `Product` (category FK, unique slug, approved name/summary/description, optional image/alt text, published state, display order, timestamps). Product publication defaults off.
+- Added six owner-provided category label records. No product/demo records, prices, specifications, inventory, origin claims, or certifications were created.
+- Added searchable/filterable Django admin category and product screens. Product image upload is optional, limited to 5 MiB and JPG/JPEG/PNG/WebP; image alternative text is required when a file is selected.
+- Added public `GET /api/v1/categories/`, paginated `GET /api/v1/products/` with validated `category` filtering, and `GET /api/v1/products/{slug}/`. Inactive categories and unpublished products are excluded.
+- Added React `/products/` and `/products/:slug/` routes, API-driven homepage preview, category filter, pagination, loading/empty/error/not-found states, and reusable product cards.
+- Development Vite proxy supports `/api` and `/media`. Production media storage is not configured.
+- The enquiry section remains non-submitting; Phase 4 has not started.
+
+### Phase 3 verification
+
+| Check | Result |
+|---|---|
+| Configured database target | Confirmed `spiceora_db` at `localhost`; both catalogue tables use `utf8mb4_0900_ai_ci`; secrets were not displayed |
+| Pre-migration schema inspection | Existing Django/auth tables only; no catalogue tables |
+| Migration review | `api.0001_initial` creates only `api_productcategory` and `api_product` and inserts six confirmed category labels; no product rows or destructive SQL |
+| `python manage.py migrate api --noinput` | Passed against `spiceora_db` |
+| Post-migration data/schema check | Passed; six categories, zero products, and only the two expected catalogue tables |
+| `python manage.py check --database default` | Passed |
+| `python manage.py migrate --check` | Passed; no pending migrations |
+| `python manage.py makemigrations --check --dry-run` | Passed; no model/migration drift |
+| Django API tests | Passed; 10 tests using isolated in-memory SQLite via `--settings=config.test_settings` |
+| Frontend `npm run lint` | Passed |
+| Frontend `npm run build` | Passed |
+| Live API | Passed; direct and Vite-proxied product list, category list and `/products/` returned HTTP 200 |
+| API validation | Passed; invalid category and page returned 400; absent product slug returned 404 |
+| Browser catalogue | Passed; live empty state and mocked product card/detail/category filter; no horizontal overflow at 320, 390, 768, 1024, or 1440px |
+| Browser route/link/image checks | Passed; product detail/breadcrumbs, 404 state, broken-image fallbacks, homepage behavior with API failure, and mobile menu were exercised; database remains free of product/demo records |
+| `git diff --check` | Passed |
+| Frontend automated component tests | Not configured; browser smoke checks used instead |
+| Secret check and `.env` | Passed; `.env` remains ignored/untracked and values were not printed |
+
 ### Verification results
 
 | Check | Result |
@@ -112,4 +148,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables are documented as decisions, proposals and open owner questions. The Phase 2 homepage foundation is implemented above; product pages, product/enquiry endpoints, schema changes, package changes and business features have not been implemented. Wait for explicit owner approval before Phase 3.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phase 2 and the Phase 3 product catalogue/read API are implemented. Contact details and publishable product content remain owner-confirmation items. The enquiry workflow is not implemented. Stop here and wait for explicit owner approval before Phase 4.

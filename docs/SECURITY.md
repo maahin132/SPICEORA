@@ -2,9 +2,11 @@
 
 ## Scope and implementation status
 
-This document defines requirements for later business functionality. It is not a security certification. The current code is a development foundation: it has environment-based Django settings, explicit development CORS configuration, Django's standard middleware, and a public health endpoint. It does **not** yet implement product/enquiry APIs, public-form abuse controls, staff operational policy, production deployment controls, or a verified security review.
+This document defines current controls and requirements for later business functionality. It is not a security certification. The current code has environment-based Django settings, explicit development CORS configuration, Django's standard middleware, a public health endpoint, and read-only public product/category endpoints. It does **not** implement enquiry submission, production deployment controls, or a verified security review.
 
-The Phase 2 homepage's enquiry section is a non-submitting placeholder; it does not collect personal information. Enquiry privacy and abuse controls are future launch requirements, not present controls.
+The anonymous catalogue API returns only products marked published and belonging to active categories. Product detail returns 404 for missing, unpublished, or inactive-category products. Admin is the only catalogue write surface and uses Django's authenticated, CSRF-protected session admin. The homepage's enquiry section remains a non-submitting placeholder and does not collect personal information.
+
+Product image uploads are limited by the model validator to 5 MiB and JPG/JPEG/PNG/WebP extensions; Django's image form validation verifies image content. Alternative text is required when an image is supplied. Development uploads are served by Django only in DEBUG mode. Production media hosting, malware/content scanning, and CDN policy are not implemented and must be designed before production uploads are enabled.
 
 ## Secrets and configuration
 
@@ -13,7 +15,7 @@ The Phase 2 homepage's enquiry section is a non-submitting placeholder; it does 
 - Rotate credentials through an approved process; use least-privilege database identities and a separate migration identity where appropriate.
 - Ensure CI, application logs, error responses, screenshots, and support tickets do not contain secret values.
 
-## Public enquiry endpoint — requirements
+## Future public enquiry endpoint — requirements (not implemented)
 
 The proposed anonymous enquiry submission endpoint is an abuse and PII boundary:
 

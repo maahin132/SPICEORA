@@ -1,21 +1,22 @@
 import { ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="footer-main">
-        <a aria-label="SPICEORA home" className="footer-wordmark" href="/">
+        <Link aria-label="SPICEORA home" className="footer-wordmark" to="/">
           SPICEORA<span aria-hidden="true">.</span>
-        </a>
+        </Link>
         <p>From Indian Origins to Global Markets.</p>
-        <a className="footer-contact-link" href="#enquiry">
-          Enquiry information
+        <Link className="footer-contact-link" to="/products/">
+          Explore products
           <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.8} />
-        </a>
+        </Link>
       </div>
       <div className="footer-bottom">
         <span>Indian spices · International trade</span>
-        <a href="#top">Back to top ↑</a>
+        <Link to="/#top">Back to top ↑</Link>
       </div>
     </footer>
   )

@@ -8,10 +8,10 @@ From `backend/` with the virtual environment active:
 python manage.py check
 python manage.py check --database default
 python manage.py migrate --check
-python manage.py test
+python manage.py test --settings=config.test_settings
 ```
 
-The database checks require a running MySQL server and valid local `.env` credentials. The current automated backend suite contains a health endpoint test; it does not validate planned catalog/enquiry behavior.
+The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing, category filtering, invalid parameters, detail lookup, unpublished/inactive visibility, response field exposure, admin registration, and image alternative-text validation. Enquiry behavior remains unimplemented.
 
 From `frontend/`:
 
@@ -20,7 +20,7 @@ npm run lint
 npm run build
 ```
 
-There is no frontend component/interaction test runner configured. Phase 2 homepage verification therefore also uses a browser smoke test at desktop and mobile widths: verify the primary and section links, mobile menu open/close, Escape handling and focus restoration, local image loading/fallback, responsive layout, and that the enquiry placeholder does not claim to submit.
+There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page and catalogue routes at desktop and mobile widths, product list/filter/detail navigation, loading/empty/error/not-found states, image loading/fallback, mobile menu open/close, Escape handling and focus restoration, and that the enquiry placeholder does not claim to submit.
 
 ## Proposed tests before public launch
 
@@ -45,4 +45,4 @@ There is no frontend component/interaction test runner configured. Phase 2 homep
 
 Run dependency/security scanners and static checks, review secrets/artifacts, test production configuration with `DEBUG=false`, and verify HTTPS, cookies, headers, CORS/CSRF, rate limits, logs, retention and restores in the deployed environment. No planned feature should be described as tested until its tests exist and pass.
 
-The product catalog, backend APIs, and enquiry submission remain unimplemented; their tests belong to a later approved phase.
+The product catalogue and public read APIs are implemented. Enquiry submission remains unimplemented; its tests belong to a later approved phase.

@@ -19,3 +19,5 @@ Prefer a same-origin HTTPS deployment: serve the Vite production assets through 
 7. Verify enquiry routing, privacy notice, data retention/deletion and staff admin access before collecting personal information.
 
 These are recommendations, not current controls. No deployment should be represented as production-ready until implemented and verified.
+
+Phase 3 product image uploads use local Django media storage only in development (`MEDIA_ROOT`, served when `DEBUG` is enabled). Production media storage, access policy, size limits at the edge, backups, and CDN delivery are not configured. Do not enable production uploads until an approved storage and delivery design is in place.

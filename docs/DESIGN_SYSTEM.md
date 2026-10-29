@@ -72,5 +72,5 @@ Design mobile-first; breakpoints are implementation decisions, not fixed in Phas
 - Implemented in `frontend/src/index.css` as Tailwind CSS v4 `@theme` tokens plus semantic component styles.
 - Uses the owner-provided forest/ivory/gold palette, forest focus rings on light surfaces and a contrasting muted-gold focus ring on dark surfaces; gold remains a restrained decorative accent.
 - Uses Georgia and Segoe UI system fallbacks. Proposed font files/licensing have not been added.
-- The homepage reuses editorial spice photography in the hero and illustrative category crops; category availability/specifications are not asserted.
-- Header, mobile menu, homepage, category preview, proposed-process block, enquiry placeholder, and footer are implemented. The placeholder does not submit data.
+- The Phase 2 hero uses the documented illustrative photo. Product catalogue imagery is optional and appears only when supplied and published through Django admin; no product imagery is seeded.
+- Header, mobile menu, API-driven homepage preview, product catalogue/detail routes, proposed-process block, enquiry placeholder, and footer are implemented. The placeholder does not submit data.

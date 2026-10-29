@@ -1,14 +1,11 @@
-import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 
-const spiceCategories = [
-  { name: 'Cumin', position: '52% 39%', tone: 'sand' },
-  { name: 'Fennel', position: '64% 25%', tone: 'sage' },
-  { name: 'Red chilli', position: '78% 12%', tone: 'rust' },
-  { name: 'Turmeric', position: '76% 57%', tone: 'ochre' },
-  { name: 'Coriander', position: '39% 39%', tone: 'olive' },
-  { name: 'Dhana-jeera', position: '60% 48%', tone: 'clay' },
-]
+import { getProducts } from '../api/catalog.js'
+import CatalogFeedback from '../components/CatalogFeedback.jsx'
+import ProductCard from '../components/ProductCard.jsx'
+import { useCatalogRequest } from '../hooks/useCatalogRequest.js'
 
 const enquirySteps = [
   {
@@ -72,6 +69,37 @@ function SectionHeading({ eyebrow, title, description, id }) {
   )
 }
 
+function HomeProductPreview() {
+  const request = useCallback(() => getProducts({ page: '1' }), [])
+  const state = useCatalogRequest(request)
+
+  if (state.status !== 'success') {
+    return (
+      <CatalogFeedback
+        error={state.error}
+        onRetry={state.retry}
+        status={state.status}
+      />
+    )
+  }
+
+  if (state.data.results.length === 0) {
+    return (
+      <p className="catalog-feedback">
+        No products are published in the catalogue yet.
+      </p>
+    )
+  }
+
+  return (
+    <div className="products-grid products-grid--preview">
+      {state.data.results.slice(0, 3).map((product) => (
+        <ProductCard key={product.slug} product={product} />
+      ))}
+    </div>
+  )
+}
+
 function HomePage() {
   return (
     <main id="main-content">
@@ -94,10 +122,10 @@ function HomePage() {
               Discuss an export enquiry
               <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
             </a>
-            <a className="button button-text" href="#collection">
-              Explore the categories
-              <ArrowDown aria-hidden="true" size={16} strokeWidth={1.8} />
-            </a>
+            <Link className="button button-text" to="/products/">
+              Explore published products
+              <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
+            </Link>
           </div>
           <p className="hero-note">
             Product availability and details are confirmed directly with the
@@ -125,49 +153,18 @@ function HomePage() {
       >
         <div className="collection-intro">
           <SectionHeading
-            description="The categories below are part of the SPICEORA brief. Product availability and public specifications are still to be confirmed."
-            eyebrow="A considered collection"
+            description="Only products reviewed and published by the business appear in this catalogue."
+            eyebrow="Published products"
             id="collection-title"
-            title="Six familiar notes."
+            title="Explore the catalogue."
           />
-          <a className="text-link collection-link" href="#enquiry">
-            Ask about a category
+          <Link className="text-link collection-link" to="/products/">
+            Browse products
             <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
-          </a>
+          </Link>
         </div>
 
-        <div className="category-grid">
-          {spiceCategories.map((spice, index) => (
-            <a
-              aria-label={`Ask about ${spice.name}`}
-              className={`category-item category-item--${spice.tone}`}
-              href="#enquiry"
-              key={spice.name}
-            >
-              <div className="category-image-wrap">
-                <EditorialImage
-                  alt=""
-                  className="category-image-frame"
-                  objectPosition={spice.position}
-                />
-                <span aria-hidden="true" className="category-number">
-                  0{index + 1}
-                </span>
-                <span aria-hidden="true" className="category-arrow">
-                  <ArrowUpRight size={17} strokeWidth={1.8} />
-                </span>
-              </div>
-              <div className="category-label">
-                <h3>{spice.name}</h3>
-                <span>Enquire</span>
-              </div>
-            </a>
-          ))}
-        </div>
-        <p className="collection-caption">
-          Illustrative spice photography; images do not represent confirmed
-          inventory or product specifications.
-        </p>
+        <HomeProductPreview />
       </section>
 
       <section
