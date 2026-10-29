@@ -1,5 +1,9 @@
 # Information Architecture and User Journeys
 
+## Phase 2 implementation status
+
+The current homepage realizes the Home page direction and shared header/footer. The six category cards are illustrative links to an enquiry placeholder, not a live catalogue or proof of availability. The enquiry section does not accept submissions. Other proposed routes remain unimplemented.
+
 ## Sitemap recommendation
 
 ```text

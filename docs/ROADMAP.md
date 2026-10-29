@@ -10,13 +10,18 @@
 
 Before implementation approval, resolve the owner confirmations in [business requirements](./BUSINESS_REQUIREMENTS.md), [information architecture](./INFORMATION_ARCHITECTURE.md), and [database plan](./DATABASE.md). Especially confirm legal/company contact details, real product availability/content, export process/claims, privacy obligations and enquiry operations.
 
-## Phase 2 — implementation (not started)
+## Phase 2 — homepage and visual foundation
 
-Only after explicit owner approval:
+**Complete:** responsive homepage, shared accessible header/navigation/footer, visual tokens, local illustrative photography, image fallback and phase-appropriate documentation/browser checks.
 
-- Implement the approved responsive website and accessible product/enquiry journeys.
+The category cards are illustrative, and the enquiry section is a non-submitting placeholder. Catalogue/detail pages, enquiry submission, business APIs and schema changes remain out of scope.
+
+## Phase 3 — catalog and enquiry implementation (not started)
+
+Only after explicit owner approval and the owner confirmations below:
+
 - Add the confirmed catalog and enquiry data model, migrations, public APIs and protected staff workflow.
-- Add launch-grade validation, abuse controls, privacy handling, tests and deployment controls.
+- Implement catalogue/product pages and the approved enquiry journey with launch-grade validation, abuse controls, privacy handling, tests and deployment controls.
 - Populate only owner-verified copy, product information, imagery and business claims.
 
 ## Deferred / only if justified

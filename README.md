@@ -4,7 +4,7 @@ SPICEORA is planned as a premium, customer-facing Indian spice-export business w
 
 **Working tagline:** “From Indian Origins to Global Markets.”
 
-The current repository is the Phase 0 technical foundation. The frontend is still a placeholder, and the backend currently exposes only its health endpoint and Django admin. Phase 1 records approved direction and proposals; it does not implement business pages, product APIs, enquiry handling, or a business data model.
+The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, and the Phase 2 responsive homepage/shared visual foundation. The backend currently exposes only its health endpoint and Django admin. The homepage catalogue is an illustrative category preview, not a live catalog; its enquiry area is a clearly marked placeholder and does not accept or send enquiries. Product APIs, enquiry handling, and business database entities are not implemented.
 
 ## Current stack
 
@@ -17,7 +17,7 @@ The current repository is the Phase 0 technical foundation. The frontend is stil
 
 See the [Phase 0 setup](./PROJECT_STATUS.md) and [testing guide](./docs/TESTING.md). The frontend and backend currently run as separate development servers. The `/api/health/` route is a liveness check, not a product API or database-readiness endpoint.
 
-## Phase 1 planning documents
+## Product and design documents
 
 - [Business requirements](./docs/BUSINESS_REQUIREMENTS.md)
 - [Information architecture and journeys](./docs/INFORMATION_ARCHITECTURE.md)
@@ -29,3 +29,7 @@ See the [Phase 0 setup](./PROJECT_STATUS.md) and [testing guide](./docs/TESTING.
 - [Roadmap](./docs/ROADMAP.md)
 
 Decisions required from the owner are labelled **Owner confirmation required**. No company facts, product specifications, certifications, customer evidence, or commercial promises should be published without verification.
+
+## Current homepage
+
+The homepage is a visual foundation only. The category tiles lead to an enquiry placeholder; there is no product catalogue, contact channel, enquiry form, or backend submission endpoint yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified scope and checks.

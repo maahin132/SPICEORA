@@ -21,3 +21,10 @@ All notable project changes are recorded here.
 - Expanded the application, database, API, security, testing and deployment plans without implementing features or changing the schema.
 - Added an original editorial visual brief using the owner-provided palette.
 - No frontend/backend implementation, dependencies, database contents, or credentials were changed.
+
+## [Phase 2] - Homepage and visual foundation
+
+- Replaced the Phase 0 placeholder screen with an editorial SPICEORA homepage, shared responsive navigation/header and footer, category preview, brand introduction, clearly proposed enquiry path, and an honest contact configuration placeholder.
+- Added accessible mobile-menu behavior, responsive design tokens, keyboard focus styling, reduced-motion support, locally sourced and documented editorial imagery, and graceful image fallback.
+- No product detail/catalogue routes, enquiry submission, backend API, database schema, dependencies, or credentials were added or changed.
+- Verification results and known limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).

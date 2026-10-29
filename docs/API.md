@@ -4,6 +4,8 @@
 
 The only application API currently implemented is `GET /api/health/`, returning `{"status":"ok"}`. It indicates Django liveness only; it is not database readiness. All routes below are **Phase 1 proposals**, not implemented endpoints.
 
+The Phase 2 homepage links to a visible enquiry placeholder only. It has no form, network submission, or customer data collection.
+
 ## Proposed convention
 
 Use `/api/v1/` for the first business API version. JSON requests/responses use UTF-8. Public responses expose only approved, active catalog content and never include internal notes, private enquiry details, database identifiers intended for staff, or unpublished facts.

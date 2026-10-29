@@ -4,7 +4,9 @@
 
 **Phase 0 — foundation:** Complete and previously verified.
 
-**Phase 1 — requirements and architecture:** Documentation complete. No application, API, schema, package, or database changes were made. Owner confirmation is still required for business facts and launch operations listed below; Phase 2 must wait for explicit approval.
+**Phase 1 — requirements and architecture:** Complete. Business and operational owner confirmations remain open before launch content and later product/enquiry implementation.
+
+**Phase 2 — homepage and visual foundation:** Implemented and verified. Scope is limited to the public homepage, shared header/navigation/footer, visual tokens and responsive interactions. No product detail/catalogue route, working enquiry submission, business API, database schema, or backend application changes.
 
 ### Environment
 
@@ -28,7 +30,7 @@
 - [Application architecture](docs/ARCHITECTURE.md): current-vs-proposed boundaries, request/data flow, validation/error handling and deployment decisions.
 - [Database plan](docs/DATABASE.md): proposed catalog/enquiry entities and relationships; no schema was created.
 - [API plan](docs/API.md): proposed public read and enquiry contracts and protected admin boundary; no endpoint was added.
-- [Design system brief](docs/DESIGN_SYSTEM.md): owner-provided palette with editorial typography, photography, responsive and accessibility guidance; no visual implementation was added.
+- [Design system brief](docs/DESIGN_SYSTEM.md): owner-provided palette with editorial typography, photography, responsive and accessibility guidance; Phase 2 implementation is summarized below.
 - [Security](docs/SECURITY.md), [testing](docs/TESTING.md), [deployment](docs/DEPLOYMENT.md), [roadmap](docs/ROADMAP.md), and this status record updated to distinguish current controls from proposals.
 
 ### Phase 1 verification
@@ -42,7 +44,34 @@
 | Django backend tests | Passed; 1 test |
 | Application/schema/dependency changes | None; Phase 1 is documentation only |
 | `.env` | Ignored and untracked; secret values were not printed or included in documentation |
-| GitHub | Only the reviewed Phase 1 documentation files are staged; compare remote `main` after push |
+| GitHub | Phase 1 documentation commit was pushed and verified on remote `main` |
+
+### Phase 2 implementation
+
+- Replaced the Phase 0 placeholder screen with an editorial home page using the approved palette and responsive layout.
+- Added shared SPICEORA header/desktop navigation, keyboard-operable mobile menu (Escape closes and restores focus), skip link and shared footer.
+- Added six illustrative spice-category cards, brand introduction, clearly labelled proposed enquiry path, and a contact placeholder.
+- Added local Unsplash still-life image with license noted in [design system](docs/DESIGN_SYSTEM.md), honest captions, image load fallback, and responsive image crops. It does not imply actual stock or product specifications.
+- Added Tailwind CSS v4 design tokens, responsive component styles, visible keyboard focus and reduced-motion handling.
+- The enquiry section does not accept or send submissions; no backend endpoint exists. No company email, phone, address or social link was invented.
+
+### Phase 2 verification
+
+| Check | Result |
+|---|---|
+| `npm run build` | Passed |
+| `npm run lint` | Passed (`oxlint`) |
+| Browser homepage check | Passed; page rendered with all six categories and all 7 local image instances loaded |
+| Browser mobile menu | Passed; opens, `aria-expanded` updates, Escape closes and restores focus, and section navigation closes the menu |
+| Responsive viewport smoke check | Passed at 320, 390, 768, 1024, and 1440 requested widths; no horizontal overflow after 320px fix |
+| Image fallback | Passed; broken hero image switches to an accessible visual fallback with its informative text alternative |
+| Not-found route | Passed; unknown URL shows the not-yet-built route state |
+| Contrast spot checks | Passed; updated small-copy pairs range 4.76:1–5.30:1, and the focus ring on forest is 6.74:1 |
+| Homepage/enquiry honesty | Passed; contact section clearly states submissions are not accepted |
+| Django tests | Not rerun; backend implementation was unchanged in Phase 2 |
+| Frontend automated component tests | Not available; no frontend test runner is configured |
+| Markdown links and `git diff --check` | Passed; 15 Markdown files checked, no broken relative links |
+| Secrets | `.env` remains ignored/untracked; no secret values were added to frontend assets or staged documentation |
 
 ### Verification results
 
@@ -83,4 +112,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables are documented as decisions, proposals and open owner questions. Product pages, product/enquiry endpoints, schema changes, package changes and business features have not been implemented. Wait for explicit owner approval before Phase 2.
+Phase 1 deliverables are documented as decisions, proposals and open owner questions. The Phase 2 homepage foundation is implemented above; product pages, product/enquiry endpoints, schema changes, package changes and business features have not been implemented. Wait for explicit owner approval before Phase 3.

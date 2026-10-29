@@ -4,6 +4,8 @@
 
 This document defines requirements for later business functionality. It is not a security certification. The current code is a development foundation: it has environment-based Django settings, explicit development CORS configuration, Django's standard middleware, and a public health endpoint. It does **not** yet implement product/enquiry APIs, public-form abuse controls, staff operational policy, production deployment controls, or a verified security review.
 
+The Phase 2 homepage's enquiry section is a non-submitting placeholder; it does not collect personal information. Enquiry privacy and abuse controls are future launch requirements, not present controls.
+
 ## Secrets and configuration
 
 - Keep `DJANGO_SECRET_KEY`, database credentials, email/API credentials, and other secrets in environment-specific secret stores; never commit `.env` or expose secrets in frontend `VITE_*` variables.

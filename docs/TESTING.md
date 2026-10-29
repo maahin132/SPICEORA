@@ -20,6 +20,8 @@ npm run lint
 npm run build
 ```
 
+There is no frontend component/interaction test runner configured. Phase 2 homepage verification therefore also uses a browser smoke test at desktop and mobile widths: verify the primary and section links, mobile menu open/close, Escape handling and focus restoration, local image loading/fallback, responsive layout, and that the enquiry placeholder does not claim to submit.
+
 ## Proposed tests before public launch
 
 ### Backend
@@ -43,4 +45,4 @@ npm run build
 
 Run dependency/security scanners and static checks, review secrets/artifacts, test production configuration with `DEBUG=false`, and verify HTTPS, cookies, headers, CORS/CSRF, rate limits, logs, retention and restores in the deployed environment. No planned feature should be described as tested until its tests exist and pass.
 
-The visual brief and API contract are planning only; this phase does not add feature tests or code.
+The product catalog, backend APIs, and enquiry submission remain unimplemented; their tests belong to a later approved phase.

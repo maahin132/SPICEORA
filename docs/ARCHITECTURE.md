@@ -6,7 +6,9 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-The application implementation remains unchanged in Phase 1. The current backend has Django admin and `GET /api/health/`; the React app is a placeholder shell. Product, contact, and enquiry features described here are plans only.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. The current backend still has Django admin and `GET /api/health/` only; no product/contact/enquiry API or database entities exist. The enquiry section is an honest configuration placeholder and does not accept or send submissions.
+
+The current homepage is built from `SiteHeader`, `HomePage`, `SiteFooter`, and local editorial image/section presentation components. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
 ## Existing foundation
 

@@ -4,7 +4,7 @@
 
 **Editorial export house:** confident, composed, tactile and globally legible. The identity should connect Indian spice origins with international trade through precise product storytelling, restrained typography and beautiful real material photography—not through generic “AI” gradients or ornamental cultural clichés.
 
-This is a design brief only. No Phase 1 page, styling, font, asset, or design token has been implemented in the application.
+This brief informed the Phase 2 homepage and shared visual foundation. The current implementation uses the approved palette and system Georgia/Segoe UI fallbacks; it does not yet load the proposed Fraunces/DM Sans fonts. Typography, contrast, layout, and component guidance below remains the reference for later routes.
 
 ## Brand palette
 
@@ -48,6 +48,7 @@ Proposed pairing: a distinctive editorial serif for large display headings (e.g.
 - Use deliberate close-up texture, natural light and restrained color grading. Avoid oversaturated color casts, repeated generic spice piles, flags/maps as decoration, and unverifiable origin imagery.
 - Product images must represent the actual item/grade offered. If that cannot be confirmed, omit the image rather than mislead.
 - Crop responsively with meaningful `alt` text for informative images and empty alt for purely decorative imagery.
+- **Phase 2 asset:** `frontend/public/images/spice-study.jpg` is a locally stored illustrative image downloaded from Unsplash photo `photo-1596040033229-a9821ebd058d`. The [Unsplash license](https://unsplash.com/license) permits commercial use. It shows assorted spices, seeds, turmeric and dried chillies; it is captioned as editorial/illustrative and explicitly is not evidence of SPICEORA inventory, facilities, sourcing or product grade. Replace or supplement it with owner-approved, rights-cleared brand/product photography before representing specific offered products.
 
 ## Motion
 
@@ -65,3 +66,11 @@ Design mobile-first; breakpoints are implementation decisions, not fixed in Phas
 - Is text contrast/focus/form feedback accessible?
 - Does the layout work with keyboard, mobile, zoom and reduced motion?
 - Are gold accents restrained and gradients/glassmorphism absent?
+
+## Phase 2 implementation notes
+
+- Implemented in `frontend/src/index.css` as Tailwind CSS v4 `@theme` tokens plus semantic component styles.
+- Uses the owner-provided forest/ivory/gold palette, forest focus rings on light surfaces and a contrasting muted-gold focus ring on dark surfaces; gold remains a restrained decorative accent.
+- Uses Georgia and Segoe UI system fallbacks. Proposed font files/licensing have not been added.
+- The homepage reuses editorial spice photography in the hero and illustrative category crops; category availability/specifications are not asserted.
+- Header, mobile menu, homepage, category preview, proposed-process block, enquiry placeholder, and footer are implemented. The placeholder does not submit data.
