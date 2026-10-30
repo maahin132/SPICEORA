@@ -8,6 +8,8 @@ The anonymous catalogue API returns only products marked published and belonging
 
 Product image uploads are available only through authenticated Django Admin. Server-side validation accepts matching JPG/JPEG, PNG, or WebP content and extensions; limits files to 5 MiB, 8,000 px per side, and 40 megapixels; and gives new uploads random UUID filenames under `products/`. Alternative text is required when an image is supplied. Old files are not automatically removed on image replacement/removal. Development uploads are served by Django only in DEBUG mode. Production media hosting, malware/content scanning, and CDN policy are not implemented and must be designed before production uploads are enabled. These checks do not replace production storage isolation, content scanning, or safe response headers.
 
+The Phase 6 intake CSV is documentation, not application input: it is not automatically imported, does not create products, and optional unverified claims must not be copied into public records without evidence and owner approval. Do not put credentials or buyer personal information in the intake file.
+
 The public enquiry endpoint stores submitted contact/business data and returns a generic receipt reference. Server-side validation enforces required fields, bounds, category/product visibility, and quantity-unit pairing. The public response does not return enquiry details, status, or internal notes. No email or other notification provider is configured.
 
 ## Secrets and configuration

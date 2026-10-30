@@ -6,16 +6,28 @@ import { CatalogApiError, getProduct } from '../api/catalog.js'
 import CatalogFeedback from '../components/CatalogFeedback.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import { useCatalogRequest } from '../hooks/useCatalogRequest.js'
+import usePageMetadata from '../hooks/usePageMetadata.js'
 
 function ProductDetailPage() {
   const { slug } = useParams()
   const request = useCallback(() => getProduct(slug), [slug])
   const state = useCatalogRequest(request)
+  const unavailable =
+    state.error instanceof CatalogApiError && state.error.status === 404
+  usePageMetadata(
+    state.status === 'success'
+      ? `${state.data.name} | SPICEORA`
+      : unavailable
+        ? 'Product not found | SPICEORA'
+        : 'Product details | SPICEORA',
+    state.status === 'success'
+      ? state.data.summary
+      : unavailable
+        ? 'This product is not available in SPICEORA’s published catalogue.'
+        : 'View published product information from SPICEORA.',
+  )
 
   if (state.status !== 'success') {
-    const unavailable =
-      state.error instanceof CatalogApiError && state.error.status === 404
-
     return (
       <main className="catalog-page product-detail-page" id="main-content">
         <p className="eyebrow">SPICEORA · Product catalogue</p>
@@ -61,7 +73,13 @@ function ProductDetailPage() {
           <p className="eyebrow">{product.category.name}</p>
           <h1>{product.name}</h1>
           <p className="product-detail-summary">{product.summary}</p>
-          <div className="product-description">{product.description}</div>
+          <section
+            aria-labelledby="product-description-heading"
+            className="product-description"
+          >
+            <h2 id="product-description-heading">Product details</h2>
+            <p>{product.description}</p>
+          </section>
           <Link
             className="button button-primary product-enquiry-cta"
             to={`/enquiry/?product=${encodeURIComponent(product.slug)}&category=${encodeURIComponent(product.category.slug)}`}

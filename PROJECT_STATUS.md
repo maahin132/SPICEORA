@@ -14,11 +14,13 @@
 
 **Phase 5 — admin product management and content workflow:** Implemented and locally verified. Authorized Django staff can create, edit, publish, unpublish and delete products with image previews and validated uploads. Product and category deletion is protected when related enquiries/products exist. No product records were created.
 
+**Phase 6 — real product catalogue and content preparation:** Implemented. Added an owner-editable blank CSV intake template and verified-content/image guide, improved catalogue empty states, added route-aware SEO titles/descriptions, and clarified product-detail semantics. No products or schema changes were added; six categories and the existing enquiry were preserved.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 4 baseline was verified before this phase.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 5 baseline was verified before this phase.
 - Latest credential re-verification: 2026-10-28. The `.env` password was read only in process and was never displayed.
 
 ### Implemented
@@ -28,6 +30,7 @@
 - Phase 3 `ProductCategory` and `Product` models, Django admin maintenance, published-only API serializers, and optional product image uploads.
 - Phase 4 `ExportEnquiry` persistence, field/product/category validation, quantity constraints, five-per-hour IP-based request throttling, opaque submission reference, and Django admin status/notes workflow.
 - Phase 5 Django admin product/category content workflow, protected related-record deletion, product image preview and validated UUID-named image uploads.
+- Phase 6 owner content intake guidance and six-row blank draft CSV; route-specific browser titles and meta descriptions use only approved catalogue name/summary fields, and empty catalogue pages provide an enquiry CTA.
 - Product image uploads accept JPEG, PNG and WebP content up to 5 MiB and 8,000 px per side / 40 megapixels; existing image paths are retained. Local development media is supported; production image storage is not configured.
 - React `/enquiry/` form with accessible labels, client/server validation, duplicate-submit prevention, pending/success/error states, and product-specific preselection from detail pages.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
@@ -172,6 +175,33 @@
 | Browser responsive and route checks | Passed; live empty catalogue, category filter, and missing-product detail checked at 320, 390, 768, 1024, and 1440 px with no horizontal overflow. No approved products exist, so a real published-product image/detail rendering was unavailable; the existing shared image fallback is unchanged |
 | Markdown links, staged diff, secret scan | Passed; no secret patterns; `.env` remains ignored and untracked |
 
+### Phase 6 content and catalogue preparation
+
+- Added [`docs/product-content-intake-template.csv`](docs/product-content-intake-template.csv) with one blank draft row for each of the six existing category labels. The file is an owner intake tool only, is not imported automatically, and created no product rows.
+- Added [`docs/PRODUCT_CONTENT_PREPARATION.md`](docs/PRODUCT_CONTENT_PREPARATION.md) with required core content, optional owner-evidence fields, publication gate, image specifications, naming and alt-text guidance.
+- No extra database fields, migrations, product records, image assets, or unsupported product claims were added.
+- Improved the homepage and catalogue empty state with a truthful status and enquiry route; category filtering stays on the existing accessible category select and query-string URL behavior.
+- Product-detail content now labels the description section semantically. Route-specific page titles and meta descriptions use page context; published product title/summary come from the API. Descriptions are capped for metadata, no unknown product structured data or production canonical domain is generated. Metadata updates client-side; the initial HTML is generic and SSR/prerendering is not configured.
+- Product URL pattern remains `/products/{slug}/`; product-to-enquiry CTA continues to include the published product and category slugs. Product image alt text remains owner supplied and required on admin upload; the existing fallback is retained and resets correctly when the image source changes.
+
+### Phase 6 verification
+
+| Check | Result |
+|---|---|
+| Database inspection | Verified `spiceora_db`; six categories, zero products, one existing enquiry and zero product-linked enquiries. No enquiry contents were read or changed |
+| Database/schema changes | None; no model changes or migrations |
+| Content intake CSV | Passed; valid CSV structure, six exact existing category labels, blank product/content/optional fields, all rows draft and unverified |
+| Django checks and isolated backend suite | Passed; 34 tests using in-memory SQLite |
+| Migration state | Passed; Phase 5 migrations current and no drift |
+| Frontend lint/build | Passed |
+| Public API and category filtering | Passed; six categories, empty product results, category filter empty result, and absent detail returns 404 |
+| Browser page metadata and empty-state checks | Passed; homepage, catalogue, enquiry and missing-product routes update title/description; catalogue and homepage empty-state CTAs work; category-prefilled enquiry link and filter clearing work |
+| Browser responsive check | Passed; homepage, catalogue and missing-product detail had no horizontal overflow at 320, 390, 768, 1024 and 1440 CSS pixels |
+| Published-product detail/image visual check | Not possible without owner-approved product records; no test product was created. The existing shared missing-image fallback remains available, but a real published image could not be visually verified |
+| Markdown links | Passed; 48 local links across 11 documents |
+| Staged diff and secret scan | Passed; 20 intended Phase 6 files reviewed, no secret patterns found, and `.env` remains ignored and untracked |
+| `.env` | Remains ignored and untracked; no values printed or changed |
+
 ### Verification results
 
 | Check | Result |
@@ -211,4 +241,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–5 are implemented. Contact details, publishable product content, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 6.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–6 are implemented. Contact details, publishable product content and images, optional product claims/evidence, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 7.

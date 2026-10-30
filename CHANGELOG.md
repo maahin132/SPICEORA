@@ -51,3 +51,11 @@ All notable project changes are recorded here.
 - Protected products referenced by enquiries from deletion; existing category and enquiry records were preserved. No product content or schema columns were added.
 - The reviewed migration changes Django ORM deletion behavior and image upload metadata only; generated database SQL was a no-op. Production media hosting remains unconfigured.
 - Verification results and image-storage limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+## [Phase 6] - Real product catalogue and content preparation
+
+- Added a blank owner-editable CSV intake template for the six existing categories and documented required verified content and optional evidence-backed product details.
+- Documented genuine product-photo requirements, preferred square 1600 px imagery, accepted formats, upload limits, safe naming, licensing, and alt-text guidance.
+- Improved catalogue empty states with an export-enquiry path, added semantic product-detail description structure, and route-specific titles/meta descriptions using approved product name/summary only.
+- No product records, product images, model fields, schema changes, or migrations were added. Existing categories and enquiry data remain unchanged.
+- Verification results and owner content requirements are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).

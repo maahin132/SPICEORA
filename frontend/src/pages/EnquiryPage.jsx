@@ -10,6 +10,7 @@ import {
 } from '../api/catalog.js'
 import CatalogFeedback from '../components/CatalogFeedback.jsx'
 import { useCatalogRequest } from '../hooks/useCatalogRequest.js'
+import usePageMetadata from '../hooks/usePageMetadata.js'
 
 function fieldError(errors, name) {
   const messages = errors[name]
@@ -17,6 +18,10 @@ function fieldError(errors, name) {
 }
 
 function EnquiryPage() {
+  usePageMetadata(
+    'Export Enquiry | SPICEORA',
+    'Share a product or category enquiry with SPICEORA using the export enquiry form.',
+  )
   const [searchParams] = useSearchParams()
   const productSlug = searchParams.get('product') || ''
   const categorySlug = searchParams.get('category') || ''

@@ -1,3 +1,4 @@
+import { ArrowUpRight } from 'lucide-react'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -5,6 +6,7 @@ import { getCategories, getProducts } from '../api/catalog.js'
 import CatalogFeedback from '../components/CatalogFeedback.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { useCatalogRequest } from '../hooks/useCatalogRequest.js'
+import usePageMetadata from '../hooks/usePageMetadata.js'
 
 function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -15,6 +17,10 @@ function ProductsPage() {
     [category, page],
   )
   const state = useCatalogRequest(request)
+  usePageMetadata(
+    'Products | SPICEORA',
+    'Review product information published by SPICEORA, or ask about a category through the enquiry form.',
+  )
 
   function updateSearch(nextCategory, nextPage = '1') {
     const nextParams = new URLSearchParams()
@@ -69,9 +75,36 @@ function ProductsPage() {
         />
 
         {state.status === 'success' && state.data[0].results.length === 0 && (
-          <p className="catalog-feedback">
-            No published products match this view yet.
-          </p>
+          <div aria-live="polite" className="catalog-empty">
+            <p className="eyebrow">Catalogue status</p>
+            <h3>No products have been published yet.</h3>
+            <p>
+              Only owner-approved product information appears here. You can
+              still share what you are looking for with SPICEORA.
+            </p>
+            <div className="catalog-empty-actions">
+              <Link
+                className="button button-primary"
+                to={
+                  category
+                    ? `/enquiry/?category=${encodeURIComponent(category)}`
+                    : '/enquiry/'
+                }
+              >
+                Make a product enquiry
+                <ArrowUpRight aria-hidden="true" size={16} />
+              </Link>
+              {category && (
+                <button
+                  className="text-link catalog-clear-filter"
+                  onClick={() => updateSearch('')}
+                  type="button"
+                >
+                  Browse all categories
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
         {state.status === 'success' && state.data[0].results.length > 0 && (

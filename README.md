@@ -35,12 +35,15 @@ npm run dev
 
 The initial catalogue has no product records. Add only owner-approved content and images through the authenticated Django admin before publishing products. Product images are stored locally under `backend/media/products/` during development with randomized filenames and upload validation; production object storage/CDN and media delivery are not configured.
 
+Use the [product content preparation guide](./docs/PRODUCT_CONTENT_PREPARATION.md) and its [owner-editable CSV intake template](./docs/product-content-intake-template.csv) to collect verified details and image assets. The six template rows are blank draft prompts only; they are not products and are never imported automatically.
+
 ## Product and design documents
 
 - [Business requirements](./docs/BUSINESS_REQUIREMENTS.md)
 - [Information architecture and journeys](./docs/INFORMATION_ARCHITECTURE.md)
 - [Application architecture](./docs/ARCHITECTURE.md)
 - [Database plan](./docs/DATABASE.md)
+- [Product content and image preparation](./docs/PRODUCT_CONTENT_PREPARATION.md)
 - [API plan](./docs/API.md)
 - [Visual design brief](./docs/DESIGN_SYSTEM.md)
 - [Security plan](./docs/SECURITY.md)

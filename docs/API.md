@@ -46,6 +46,8 @@ Responses omit database IDs, publication flags, sort order, timestamps, and admi
 
 Products and categories are managed through the authenticated Django Admin, not public write endpoints. Product image uploads accept validated JPEG/JPG, PNG, or WebP content; no public upload endpoint exists.
 
+Phase 6 does not change the API or data schema. Owner content intake is maintained separately in the [product preparation guide](./PRODUCT_CONTENT_PREPARATION.md); optional grade, origin, processing, packaging, MOQ, documentation and certification fields in that template are not stored or exposed by the API.
+
 ## `POST /api/v1/enquiries/`
 
 Publicly submits one export enquiry. The request must identify exactly one active `category_slug` or one published `product_slug`; the server derives a product's category.

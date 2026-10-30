@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
 function ProductImage({ alt, className, loading = 'lazy', src }) {
-  const [failed, setFailed] = useState(false)
+  const [failedSrc, setFailedSrc] = useState(null)
+  const failed = Boolean(src) && failedSrc === src
 
   return (
     <div className={className}>
@@ -11,7 +12,7 @@ function ProductImage({ alt, className, loading = 'lazy', src }) {
           decoding="async"
           fetchPriority={loading === 'eager' ? 'high' : 'auto'}
           loading={loading}
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
           src={src}
         />
       ) : (

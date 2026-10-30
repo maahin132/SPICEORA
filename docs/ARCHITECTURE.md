@@ -6,7 +6,7 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. Phase 5 improves product/category admin content workflows, protects enquiry-linked products from deletion, and validates product image uploads. No notification provider or multi-item quote workflow is configured.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. Phase 5 improves product/category admin content workflows, protects enquiry-linked products from deletion, and validates product image uploads. Phase 6 prepares owner-verified catalogue content through a non-imported CSV template, improves empty-state enquiry navigation, and applies route-aware browser titles and descriptions without adding product fields or records. No notification provider or multi-item quote workflow is configured.
 
 The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `EnquiryPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` for API calls and `useCatalogRequest.js` for read/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
@@ -41,6 +41,8 @@ The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`,
 - Product and category references are protected from deletion when used by products/enquiries. Enquiry-linked products cannot be deleted; unreferenced products use the standard admin confirmation flow.
 - New image filenames are randomized; replacing/removing an image does not rewrite other stored image paths. Local development media uses `MEDIA_ROOT/products/`; production storage and delivery are not configured.
 - The public API contract is unchanged: only published products in active categories are returned, optional images use absolute URLs, and unpublished or deleted product slugs return 404. The frontend keeps the existing visual system and missing-image fallback.
+- A CSV content-intake template provides blank rows for the six existing category labels. It is not a fixture or import source. Browser titles and meta descriptions use confirmed page labels and the published product name/short summary only; no unknown product structured data or production canonical domain is asserted.
+- Route metadata is updated client-side in the React SPA. The initial HTML has only generic SPICEORA metadata; server-side rendering/prerendering and production canonical URLs are not configured.
 
 ## Proposed production architecture
 

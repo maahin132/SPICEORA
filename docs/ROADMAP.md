@@ -34,6 +34,14 @@ Before public production launch, obtain owner/legal approval for the privacy not
 
 Before production, configure and verify media storage/delivery, backup and retention, CDN/security headers, and any desired image malware/content scanning. Populate the catalogue only with owner-approved product content.
 
+## Phase 6 — real product catalogue and content preparation
+
+**Content preparation complete; catalogue remains intentionally empty.** Added a blank CSV intake template for the six existing categories, image/content verification guidance, route-specific page titles/descriptions, and a clearer empty catalogue enquiry action. No products or schema changes were added.
+
+The owner must provide and approve each actual product name, category, short summary, full description, publication order, authentic image and rights, and descriptive alt text. Variant, grade, origin, processing, packaging, minimum order quantity, export documentation, and certifications require owner evidence and review before any public use. They are intake-only fields and not part of the current product model/API.
+
+Route-specific title and description metadata is client-side only. Review server-rendered/prerendered SEO and canonical URLs after the public domain and hosting architecture are approved.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

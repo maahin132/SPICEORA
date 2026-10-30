@@ -46,3 +46,5 @@ There is no frontend component/interaction test runner configured. Browser smoke
 Run dependency/security scanners and static checks, review secrets/artifacts, test production configuration with `DEBUG=false`, and verify HTTPS, cookies, headers, CORS/CSRF, rate limits, logs, retention and restores in the deployed environment. No planned feature should be described as tested until its tests exist and pass.
 
 The product catalogue, public read APIs, and enquiry submission are implemented. Before launch, add frontend automated interaction tests and execute production deployment/security checks, including rate-limit behavior with the configured shared cache and edge controls.
+
+Phase 6 content preparation uses a six-row CSV intake template. Validate its header and category labels, and ensure the rows remain blank draft prompts rather than fixtures. Browser checks should verify the empty catalogue enquiry CTA, category-prefilled enquiry link, route-specific title/description updates, product detail 404 metadata, and the existing image fallback without inserting a product into the local database.

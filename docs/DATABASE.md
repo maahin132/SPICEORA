@@ -4,6 +4,8 @@
 
 **Implemented:** MySQL 8.0 and Django connection configuration are part of the Phase 0 foundation. Django's built-in auth/admin/session migrations are applied. Phase 3 migration `api.0001_initial` adds `api_productcategory` and `api_product` to `spiceora_db`; it seeds the six owner-provided category labels and creates no product rows. Phase 4 migration `api.0002_exportenquiry` was applied on 2026-10-30 and adds the single `api_exportenquiry` table. Phase 5 migration `api.0003_phase5_product_admin_safety` changes ORM deletion behavior and upload-field state only; reviewed generated SQL contained no database operations. Current verified counts are six categories, zero products, and one enquiry. The enquiry was preserved without reading or editing its content. No unrelated databases were accessed or changed.
 
+Phase 6 adds an owner-editable CSV intake template under `docs/`, not database records or schema. No Django model or API migration is required. Intake rows remain draft and unverified until the owner supplies evidence and approves publication through Django Admin.
+
 The configured development connection was verified as `spiceora_db` at `localhost`. The two catalogue tables use MySQL collation `utf8mb4_0900_ai_ci`. No WoodHub or unrelated database was accessed or changed.
 
 ## Implemented catalogue entities

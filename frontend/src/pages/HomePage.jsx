@@ -6,6 +6,7 @@ import { getProducts } from '../api/catalog.js'
 import CatalogFeedback from '../components/CatalogFeedback.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { useCatalogRequest } from '../hooks/useCatalogRequest.js'
+import usePageMetadata from '../hooks/usePageMetadata.js'
 
 const enquirySteps = [
   {
@@ -85,9 +86,14 @@ function HomeProductPreview() {
 
   if (state.data.results.length === 0) {
     return (
-      <p className="catalog-feedback">
-        No products are published in the catalogue yet.
-      </p>
+      <div className="catalog-empty catalog-empty--compact">
+        <p className="eyebrow">Catalogue status</p>
+        <p>No products have been published yet.</p>
+        <Link className="text-link" to="/enquiry/">
+          Make a product enquiry
+          <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
+        </Link>
+      </div>
     )
   }
 
@@ -101,6 +107,11 @@ function HomeProductPreview() {
 }
 
 function HomePage() {
+  usePageMetadata(
+    'SPICEORA | Indian Spice Categories',
+    "Explore SPICEORA's Indian spice categories and share a product enquiry with the business.",
+  )
+
   return (
     <main id="main-content">
       <section aria-labelledby="hero-title" className="hero-section">

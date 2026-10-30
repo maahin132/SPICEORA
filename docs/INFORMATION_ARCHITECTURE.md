@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-The homepage and shared header/footer are implemented. Phase 3 adds `/products/` and `/products/{product-slug}/`, backed by the public read-only API. The six category labels exist in the database, but there are no product records yet; the catalogue therefore shows a truthful empty state. The homepage's enquiry section remains a non-submitting placeholder. Contact and privacy routes are not implemented.
+The homepage and shared header/footer are implemented. Phase 3 adds `/products/` and `/products/{product-slug}/`, backed by the public read-only API. The six category labels exist in the database, but there are no product records yet; the catalogue therefore shows a truthful empty state with an enquiry path. Route-specific browser titles/descriptions use only current page context and published product name/summary. The homepage's enquiry section remains a non-submitting placeholder. Contact and privacy routes are not implemented.
 
 ## Sitemap recommendation
 
