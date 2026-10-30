@@ -42,6 +42,14 @@ The owner must provide and approve each actual product name, category, short sum
 
 Route-specific title and description metadata is client-side only. Review server-rendered/prerendered SEO and canonical URLs after the public domain and hosting architecture are approved.
 
+## Phase 7 — own farm and crop traceability foundation
+
+**Operational foundation implemented.** The additive schema records staff-entered farms, crop seasons, harvests, production batches, actual processing events, and append-only inventory movements. Batch creation records the initial production receipt; balances are calculated from the movement ledger. No operational records are seeded, and no farm or processing capability is presumed.
+
+The Django Admin and protected session-authenticated, per-model-permission API are the current staff surfaces. The public React app does not have secure staff authentication or CSRF handling, so there is no operations frontend. Before production use, define operational reference conventions, staff access assignments, reservation/order linkage, stock correction approval ownership, backup/audit controls, and a secure staff frontend only if needed. Exercise MySQL row-lock behavior under concurrency in a representative deployment; the isolated SQLite suite does not prove that behavior.
+
+Phase 7 stops at the internal traceability foundation. Do not begin Phase 8 without explicit owner approval.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

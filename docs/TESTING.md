@@ -13,6 +13,8 @@ python manage.py test --settings=config.test_settings
 
 The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing/filtering, enquiry submission/validation, quantity rules, product/category visibility, response field exposure, rate limiting, admin product creation/update/publication/deletion, protected product/category/enquiry relationships, image format/size/dimension validation, randomized image uploads and URLs, admin image previews, enquiry status/note management, and image alternative-text validation.
 
+Phase 7 backend tests additionally cover farm/season/harvest date and quantity validation, harvest-to-batch allocation and immutable lineage, automatic initial receipts, processing record validation/immutability, kilograms/metric-tonne normalization, reservations/releases/dispatches, stock protection, movement append-only chronology, protected foreign keys, staff/model permissions, correction approval permission, CSRF enforcement, paginated operations responses, admin visibility, and end-to-end staff API traceability. Run these on the isolated SQLite test database; production MySQL row-lock concurrency is not verified by those tests.
+
 From `frontend/`:
 
 ```powershell
@@ -48,3 +50,5 @@ Run dependency/security scanners and static checks, review secrets/artifacts, te
 The product catalogue, public read APIs, and enquiry submission are implemented. Before launch, add frontend automated interaction tests and execute production deployment/security checks, including rate-limit behavior with the configured shared cache and edge controls.
 
 Phase 6 content preparation uses a six-row CSV intake template. Validate its header and category labels, and ensure the rows remain blank draft prompts rather than fixtures. Browser checks should verify the empty catalogue enquiry CTA, category-prefilled enquiry link, route-specific title/description updates, product detail 404 metadata, and the existing image fallback without inserting a product into the local database.
+
+Phase 7 adds no React route because no staff authentication/authorization UI exists in the frontend. Verify the protected API with isolated staff/permission tests and Django Admin client tests; verify existing public routes at the required responsive widths. Do not create operational records in the configured MySQL database for QA.

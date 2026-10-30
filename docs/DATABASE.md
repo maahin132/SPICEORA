@@ -6,6 +6,8 @@
 
 Phase 6 adds an owner-editable CSV intake template under `docs/`, not database records or schema. No Django model or API migration is required. Intake rows remain draft and unverified until the owner supplies evidence and approves publication through Django Admin.
 
+Phase 7 migration `api.0004_farm_cropseason_harvest_productionbatch_and_more` creates six new operational tables and their check/foreign-key constraints in `spiceora_db`. Generated SQL was reviewed before application: only new tables, constraints and protected foreign keys are created; no existing table is altered or dropped and no existing rows are updated or deleted. The migration contains no data seeding. Post-migration verification confirmed all existing category/product/enquiry counts unchanged and all six new operational tables empty.
+
 The configured development connection was verified as `spiceora_db` at `localhost`. The two catalogue tables use MySQL collation `utf8mb4_0900_ai_ci`. No WoodHub or unrelated database was accessed or changed.
 
 ## Implemented catalogue entities
@@ -57,6 +59,52 @@ A database check constraint requires quantity to be null with a blank unit, or p
 No uploaded documents, identity documents, payment data, or sensitive categories are justified for the initial enquiry workflow. Do not store raw client IPs by default; any abuse signals should be short-lived, access-controlled, and documented.
 
 There is no `EnquiryItem` table. Multiple product line items and a quotation workflow are deferred until confirmed as necessary.
+
+## Phase 7 farm-to-inventory entities
+
+### `Farm`
+
+Unique staff-entered reference and name, location/address, optional paired area/unit, description, private internal notes, active state, and timestamps. No farm names, locations, areas, or records are seeded. Farm identity/location/area are protected from edits after seasons are recorded; a farm with seasons cannot be deleted.
+
+### `CropSeason`
+
+Unique reference, protected farm FK, staff-entered crop name, optional planting and expected harvest dates, status (`planned`, `growing`, `harvested`, `closed`, `cancelled`), private notes, and timestamps. Multiple seasons may belong to one farm. Expected harvest cannot precede planting. A season with harvests cannot have its farm, crop identity, or planting date rewritten.
+
+### `Harvest`
+
+Unique reference, protected crop-season FK, actual harvest date, positive decimal quantity and mass unit (`kg` or `metric_tonne`), notes, and timestamps. Harvest date cannot precede planting or be in the future. Production batches can split a harvest but their combined initial quantities cannot exceed the recorded harvest amount after unit conversion. Once a batch references a harvest, its origin/date/quantity are immutable.
+
+### `ProductionBatch`
+
+Unique reference, protected harvest FK, staff-entered product/spice identification (not an FK to the public product catalogue), batch date, positive initial quantity/unit, current handling status, internal notes, and timestamps. The batch date cannot precede harvest or be in the future. Batch reference, origin, product identity, date, and initial quantity are immutable. Creating a batch in Django Admin or through the protected API atomically creates one production-receipt movement for its initial quantity; no batch rows are seeded.
+
+### `ProcessingRecord`
+
+Protected batch FK, free-text activity, actual activity date, optional paired input/output quantities and units, description, supporting document references, private notes, and timestamps. Actual activity dates cannot precede batch creation or be future dates. Records are append-only. A processing record does not itself change inventory; record real stock adjustments separately. Supporting document references are text only—there is no upload or document-serving endpoint.
+
+### `InventoryMovement`
+
+Unique reference, protected batch FK, explicit movement type, positive quantity and unit, movement date, required reason/reference, private notes, and creation timestamp. Records are append-only and cannot be deleted through model/admin/API operations. Movement dates cannot predate the batch, be in the future, or be earlier than the latest movement for that batch. Corrections are new, permission-gated movements; do not edit or overwrite the ledger.
+
+## Inventory ledger and calculation
+
+All movement quantities are normalized to kilograms (`1 metric_tonne = 1000 kg`) for calculations. Each batch begins with one automatically generated production receipt equal to its initial quantity.
+
+- **On-hand kg:** production receipts + processing increases + approved correction increases − processing decreases − dispatches − approved correction decreases.
+- **Reserved kg:** reservations − reservation releases − dispatched quantity allocated first against the pooled reserved amount (never below zero).
+- **Available kg:** on-hand kg − reserved kg.
+
+Reservations and outflows are checked inside a transaction while locking the batch row. A reservation or non-dispatch decrease cannot make available stock negative; a dispatch cannot exceed physical on-hand stock and consumes the pooled reserved balance first. Releases cannot exceed outstanding reservations. This system does not associate reservations with individual buyers/orders; dispatch uses pooled reservations. Staff must record actual processing inventory effects separately from processing narrative events. No mutable stock balance column is stored, and no movement is silently overwritten. Concurrency guarantees depend on the configured MySQL row lock; SQLite tests do not establish MySQL concurrency behavior.
+
+### Traceability relationships
+
+```text
+Farm 1 ─── * CropSeason 1 ─── * Harvest 1 ─── * ProductionBatch
+ProductionBatch 1 ─── * ProcessingRecord
+ProductionBatch 1 ─── * InventoryMovement
+```
+
+The public Product/ExportEnquiry models and relationships are unchanged. Farm and operational data are not exposed by anonymous endpoints.
 
 ## Relationships and lifecycle
 

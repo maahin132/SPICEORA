@@ -4,7 +4,7 @@
 
 **Phase 0 — foundation:** Complete and previously verified.
 
-**Phase 1 — requirements and architecture:** Complete. Business and operational owner confirmations remain open before launch content and later product/enquiry implementation.
+**Phase 1 — requirements and architecture:** Complete. Business and operational owner confirmations remain open before launch.
 
 **Phase 2 — homepage and visual foundation:** Implemented and verified. Scope is limited to the public homepage, shared header/navigation/footer, visual tokens and responsive interactions. No product detail/catalogue route, working enquiry submission, business API, database schema, or backend application changes.
 
@@ -16,11 +16,13 @@
 
 **Phase 6 — real product catalogue and content preparation:** Implemented. Added an owner-editable blank CSV intake template and verified-content/image guide, improved catalogue empty states, added route-aware SEO titles/descriptions, and clarified product-detail semantics. No products or schema changes were added; six categories and the existing enquiry were preserved.
 
+**Phase 7 — own farm and crop traceability foundation:** Implemented. Added private farm, season, harvest, production batch, processing-event, and inventory-ledger models; Django Admin workflows; and paginated staff-only APIs. The reviewed additive migration is applied to `spiceora_db`; no farm or operational records were seeded.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 5 baseline was verified before this phase.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 6 baseline was verified before this phase.
 - Latest credential re-verification: 2026-10-28. The `.env` password was read only in process and was never displayed.
 
 ### Implemented
@@ -31,6 +33,7 @@
 - Phase 4 `ExportEnquiry` persistence, field/product/category validation, quantity constraints, five-per-hour IP-based request throttling, opaque submission reference, and Django admin status/notes workflow.
 - Phase 5 Django admin product/category content workflow, protected related-record deletion, product image preview and validated UUID-named image uploads.
 - Phase 6 owner content intake guidance and six-row blank draft CSV; route-specific browser titles and meta descriptions use only approved catalogue name/summary fields, and empty catalogue pages provide an enquiry CTA.
+- Phase 7 private traceability models, protected staff APIs, admin workflows, append-only processing/inventory records, and movement-derived stock calculations; no custom operations UI was added because the public frontend has no secure staff authentication/CSRF flow.
 - Product image uploads accept JPEG, PNG and WebP content up to 5 MiB and 8,000 px per side / 40 megapixels; existing image paths are retained. Local development media is supported; production image storage is not configured.
 - React `/enquiry/` form with accessible labels, client/server validation, duplicate-submit prevention, pending/success/error states, and product-specific preselection from detail pages.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
@@ -202,6 +205,31 @@
 | Staged diff and secret scan | Passed; 20 intended Phase 6 files reviewed, no secret patterns found, and `.env` remains ignored and untracked |
 | `.env` | Remains ignored and untracked; no values printed or changed |
 
+### Phase 7 farm-to-inventory foundation
+
+- Farm/crop/harvest/batch/processing/inventory workflow is implemented in Django. Crop names and operation references are staff-entered. No operational records, facility claims, certification claims, or production capabilities were fabricated.
+- Batches are traced to harvest, crop season, and farm. Batch creation atomically records an initial production receipt, and harvest allocation prevents batch totals from exceeding harvested quantity.
+- Inventory is computed in kilograms from immutable movements. Reservations reduce available stock; releases restore it; dispatch consumes pooled reservations first; approval-gated corrections are additional movements. Negative available or physical stock is rejected, and movement dates cannot be backdated behind existing movements.
+- Internal API access is staff-session authenticated, per-model permission gated, CSRF protected on writes, paginated, and limited to list/create. Corrections require the additional `approve_inventory_correction` permission. The React app does not expose operations data.
+- Migration source/SQL review found six additive new tables, check constraints, and protected foreign keys only. No existing table/row was modified or deleted; no new operational records were inserted.
+- Exact post-migration record counts, test results, frontend/browser checks, secret scan, and Git verification are recorded below after final verification.
+
+### Phase 7 verification
+
+| Check | Result |
+|---|---|
+| Pre-migration database target | Passed; configured and connected database `spiceora_db`, MySQL 8.0.46 |
+| Migration source and SQL review | Passed; migration creates six traceability tables with constraints and FKs only; no destructive DDL/DML or data seeding |
+| Migration application | Passed; `api.0004_farm_cropseason_harvest_productionbatch_and_more` applied |
+| Post-migration database counts | Verified six categories, zero products, one existing enquiry, and zero rows in each of the six new operational tables |
+| Django checks and migration drift | Passed; `check`, `check --database default`, `migrate --check`, and `makemigrations --check --dry-run` |
+| Backend isolated suite | Passed; 58 tests using in-memory SQLite (34 baseline plus 24 Phase 7 tests); MySQL concurrency is not established by SQLite |
+| Frontend lint/build | Passed; no Phase 7 frontend code was needed |
+| Protected API/admin verification | Passed in isolated tests; staff/model permissions, CSRF write enforcement, correction approval, admin read-only ledger, and full API lineage tested |
+| Responsive/browser checks | Passed; existing public routes checked at 320, 390, 768, 1024 and 1440 px without horizontal overflow; category selection and enquiry prefill verified; admin login loaded and unauthenticated operations API access returned 403 |
+| Secret scan and `.env` | Passed; no high-confidence credential patterns in staged changes; `.env` is ignored and untracked |
+| Git identity and remote | Verified before commit; configured author/committer are Maahin and `origin` points to the SPICEORA GitHub repository |
+
 ### Verification results
 
 | Check | Result |
@@ -241,4 +269,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–6 are implemented. Contact details, publishable product content and images, optional product claims/evidence, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 7.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–7 are implemented. Contact details, publishable product content and images, optional product claims/evidence, privacy/retention policy, production abuse controls, notification setup, staff assignments, and operational policies remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 8.

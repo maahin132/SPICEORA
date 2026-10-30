@@ -59,3 +59,11 @@ All notable project changes are recorded here.
 - Improved catalogue empty states with an export-enquiry path, added semantic product-detail description structure, and route-specific titles/meta descriptions using approved product name/summary only.
 - No product records, product images, model fields, schema changes, or migrations were added. Existing categories and enquiry data remain unchanged.
 - Verification results and owner content requirements are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+## [Phase 7] - Own farm and crop traceability foundation
+
+- Added private Farm, CropSeason, Harvest, ProductionBatch, ProcessingRecord, and InventoryMovement models with protected relationships, validation, and historical-record safeguards.
+- Creating a production batch atomically records its initial receipt; inventory is calculated from an immutable movement ledger with kilogram normalization, reservations, releases, dispatches, processing adjustments, and permission-gated corrections.
+- Added searchable Django Admin workflows and paginated staff-only session-authenticated API collections with per-model permissions and CSRF protection. No custom React operations UI was added because the public frontend has no secure staff authentication flow.
+- Applied reviewed additive migration `api.0004_farm_cropseason_harvest_productionbatch_and_more` to `spiceora_db`; no records were seeded and existing categories/products/enquiries were preserved.
+- Verification results, inventory rules, security boundaries, and limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).

@@ -12,6 +12,10 @@ The Phase 6 intake CSV is documentation, not application input: it is not automa
 
 The public enquiry endpoint stores submitted contact/business data and returns a generic receipt reference. Server-side validation enforces required fields, bounds, category/product visibility, and quantity-unit pairing. The public response does not return enquiry details, status, or internal notes. No email or other notification provider is configured.
 
+Phase 7 farm, crop season, harvest, batch, processing and inventory data are private operational records. They are available through authenticated Django Admin and `/api/v1/operations/` staff collections only. API access requires a staff user plus per-model view/add permissions; unsafe session-authenticated requests retain CSRF protection. Correction movements require the additional `approve_inventory_correction` model permission. There are no anonymous operations reads, public write endpoints, or operations routes in the React site. Internal notes and document references are not serialized by public catalogue/enquiry endpoints.
+
+Processing records and inventory movements are append-only in model/admin/API paths. Batch origin/identity/initial quantity are immutable, and farm/season/harvest relationships use protected foreign keys and admin deletion restrictions. Inventory writes lock the batch row and reject reservations/outflows that would make available stock negative; production batch creation and its initial receipt are transactional. This is application-level workflow protection, not tamper-proof ledger storage: database administrators can still alter rows, and database auditing/backup/restore controls remain deployment responsibilities.
+
 ## Secrets and configuration
 
 - Keep `DJANGO_SECRET_KEY`, database credentials, email/API credentials, and other secrets in environment-specific secret stores; never commit `.env` or expose secrets in frontend `VITE_*` variables.

@@ -1,10 +1,10 @@
 # SPICEORA
 
-SPICEORA is planned as a premium, customer-facing Indian spice-export business website for international B2B buyers, importers, distributors, wholesalers, and related business customers. It is not a SaaS dashboard, ERP, marketplace, or generic landing-page product.
+SPICEORA is a premium, customer-facing Indian spice-export business website for international B2B buyers, importers, distributors, wholesalers, and related business customers, with a limited private farm-to-inventory operations foundation. The public website is not a SaaS dashboard, ERP, marketplace, or generic landing-page product.
 
 **Working tagline:** “From Indian Origins to Global Markets.”
 
-The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, the Phase 3 database-backed product catalogue/read API, the Phase 4 export enquiry workflow, and the Phase 5 Django Admin product content workflow. The local catalogue currently has six category labels and no product records. Enquiries are stored for staff review; no email notification is configured.
+The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, the Phase 3 database-backed product catalogue/read API, the Phase 4 export enquiry workflow, the Phase 5 Django Admin product content workflow, the Phase 6 owner content-preparation workflow, and the Phase 7 internal farm-to-inventory traceability foundation. No farm, season, harvest, batch, processing, or inventory records are seeded. The product catalogue currently has six category labels and no product records. Enquiries are stored for staff review; no email notification is configured.
 
 ## Current stack
 
@@ -53,4 +53,4 @@ Decisions required from the owner are labelled **Owner confirmation required**. 
 
 ## Current homepage
 
-The homepage's product preview is API-driven and keeps the rest of the homepage available when the catalogue API is unavailable. Product detail pages only show admin-published records and link to a product-prefilled enquiry form. Submitted enquiries are available to authorized staff through Django admin. No company contact details are invented, no email provider is configured, and the production privacy/retention and distributed rate-limit controls still require owner review. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified scope and checks.
+The homepage's product preview is API-driven and keeps the rest of the homepage available when the catalogue API is unavailable. Product detail pages only show admin-published records and link to a product-prefilled enquiry form. Submitted enquiries and internal farm/crop/batch/inventory records are available only to authorized staff through Django Admin and protected session-authenticated operations APIs. The public React site has no staff authentication flow and does not expose operational data. No company contact details are invented, no email provider is configured, and production privacy/retention, distributed rate-limit, and deployment controls still require owner review. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified scope and checks.

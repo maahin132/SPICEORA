@@ -1,18 +1,31 @@
 from decimal import Decimal
 
 from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 
-from .models import ExportEnquiry, Product, ProductCategory
+from .models import (
+    CropSeason,
+    ExportEnquiry,
+    Farm,
+    Harvest,
+    InventoryMovement,
+    ProcessingRecord,
+    Product,
+    ProductCategory,
+    ProductionBatch,
+)
 
 
 def health(request):
@@ -272,3 +285,307 @@ class ExportEnquiryCreateView(APIView):
     @transaction.atomic
     def _create_enquiry(validated_data):
         return ExportEnquiry.objects.create(**validated_data)
+
+
+def model_validation_errors(error):
+    try:
+        return error.message_dict
+    except AttributeError:
+        return {"non_field_errors": error.messages}
+
+
+class OperationsModelSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        instance = self.instance or self.Meta.model()
+        for field, value in attrs.items():
+            setattr(instance, field, value)
+        try:
+            instance.full_clean()
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(
+                model_validation_errors(error)
+            ) from error
+        return attrs
+
+
+class FarmSerializer(OperationsModelSerializer):
+    class Meta:
+        model = Farm
+        fields = (
+            "reference",
+            "name",
+            "location",
+            "area",
+            "area_unit",
+            "description",
+            "internal_notes",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+
+class CropSeasonSerializer(OperationsModelSerializer):
+    farm_reference = serializers.SlugRelatedField(
+        source="farm",
+        slug_field="reference",
+        queryset=Farm.objects.all(),
+    )
+
+    class Meta:
+        model = CropSeason
+        fields = (
+            "reference",
+            "farm_reference",
+            "crop_name",
+            "planting_date",
+            "expected_harvest_date",
+            "status",
+            "internal_notes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+
+class HarvestSerializer(OperationsModelSerializer):
+    crop_season_reference = serializers.SlugRelatedField(
+        source="crop_season",
+        slug_field="reference",
+        queryset=CropSeason.objects.all(),
+    )
+
+    class Meta:
+        model = Harvest
+        fields = (
+            "reference",
+            "crop_season_reference",
+            "harvest_date",
+            "quantity",
+            "quantity_unit",
+            "notes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+
+class ProductionBatchSerializer(OperationsModelSerializer):
+    harvest_reference = serializers.SlugRelatedField(
+        source="harvest",
+        slug_field="reference",
+        queryset=Harvest.objects.all(),
+    )
+    crop_season_reference = serializers.SerializerMethodField()
+    farm_reference = serializers.SerializerMethodField()
+    available_quantity_kg = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductionBatch
+        fields = (
+            "reference",
+            "harvest_reference",
+            "crop_season_reference",
+            "farm_reference",
+            "product_name",
+            "batch_date",
+            "initial_quantity",
+            "quantity_unit",
+            "status",
+            "internal_notes",
+            "available_quantity_kg",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "crop_season_reference",
+            "farm_reference",
+            "available_quantity_kg",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_crop_season_reference(self, batch):
+        return batch.harvest.crop_season.reference
+
+    def get_farm_reference(self, batch):
+        return batch.harvest.crop_season.farm.reference
+
+    def get_available_quantity_kg(self, batch):
+        from .models import inventory_balances
+
+        on_hand_kg, reserved_kg = inventory_balances(batch)
+        return format(on_hand_kg - reserved_kg, "f")
+
+
+class ProcessingRecordSerializer(OperationsModelSerializer):
+    batch_reference = serializers.SlugRelatedField(
+        source="batch",
+        slug_field="reference",
+        queryset=ProductionBatch.objects.all(),
+    )
+
+    class Meta:
+        model = ProcessingRecord
+        fields = (
+            "id",
+            "batch_reference",
+            "activity",
+            "activity_date",
+            "input_quantity",
+            "input_unit",
+            "output_quantity",
+            "output_unit",
+            "description",
+            "supporting_document_references",
+            "internal_notes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class InventoryMovementSerializer(OperationsModelSerializer):
+    batch_reference = serializers.SlugRelatedField(
+        source="batch",
+        slug_field="reference",
+        queryset=ProductionBatch.objects.all(),
+    )
+    class Meta:
+        model = InventoryMovement
+        fields = (
+            "reference",
+            "batch_reference",
+            "movement_type",
+            "quantity",
+            "quantity_unit",
+            "movement_date",
+            "reason",
+            "internal_notes",
+            "created_at",
+        )
+        read_only_fields = ("created_at",)
+
+    def validate(self, attrs):
+        movement_type = attrs.get(
+            "movement_type",
+            getattr(self.instance, "movement_type", None),
+        )
+        request = self.context.get("request")
+        correction_types = {
+            InventoryMovement.MovementType.CORRECTION_IN,
+            InventoryMovement.MovementType.CORRECTION_OUT,
+        }
+        if (
+            movement_type in correction_types
+            and request
+            and not request.user.has_perm("api.approve_inventory_correction")
+        ):
+            raise PermissionDenied(
+                "You need correction-approval permission to record this movement."
+            )
+        return super().validate(attrs)
+
+
+
+class OperationsPagination(PageNumberPagination):
+    page_size = 25
+
+
+class StaffModelPermissions(DjangoModelPermissions):
+    perms_map = {
+        **DjangoModelPermissions.perms_map,
+        "GET": ["%(app_label)s.view_%(model_name)s"],
+        "HEAD": ["%(app_label)s.view_%(model_name)s"],
+        "OPTIONS": ["%(app_label)s.view_%(model_name)s"],
+    }
+
+
+class ProtectedOperationsCollectionView(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAdminUser, StaffModelPermissions)
+    pagination_class = OperationsPagination
+    queryset = None
+    serializer_class = None
+
+    def get_queryset(self):
+        return self.queryset.all()
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = self.serializer_class(
+            page,
+            many=True,
+            context={"request": request},
+        )
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request):
+        if not isinstance(request.data, dict):
+            return Response(
+                {"errors": {"non_field_errors": ["Submit a JSON object."]}},
+                status=400,
+            )
+        serializer = self.serializer_class(
+            data=request.data,
+            context={"request": request},
+        )
+        unknown_fields = set(request.data) - set(serializer.fields)
+        if unknown_fields:
+            return Response(
+                {
+                    "errors": {
+                        field: ["Unknown field."]
+                        for field in sorted(unknown_fields)
+                    }
+                },
+                status=400,
+            )
+        if not serializer.is_valid():
+            return Response({"errors": serializer.errors}, status=400)
+        try:
+            instance = serializer.save()
+        except DjangoValidationError as error:
+            return Response(
+                {"errors": model_validation_errors(error)},
+                status=400,
+            )
+        return Response(
+            self.serializer_class(instance, context={"request": request}).data,
+            status=201,
+        )
+
+
+class FarmOperationsView(ProtectedOperationsCollectionView):
+    queryset = Farm.objects.all()
+    serializer_class = FarmSerializer
+
+
+class CropSeasonOperationsView(ProtectedOperationsCollectionView):
+    queryset = CropSeason.objects.select_related("farm")
+    serializer_class = CropSeasonSerializer
+
+
+class HarvestOperationsView(ProtectedOperationsCollectionView):
+    queryset = Harvest.objects.select_related("crop_season")
+    serializer_class = HarvestSerializer
+
+
+class ProductionBatchOperationsView(ProtectedOperationsCollectionView):
+    queryset = ProductionBatch.objects.select_related(
+        "harvest__crop_season__farm"
+    )
+    serializer_class = ProductionBatchSerializer
+
+
+class ProcessingRecordOperationsView(ProtectedOperationsCollectionView):
+    queryset = ProcessingRecord.objects.select_related("batch")
+    serializer_class = ProcessingRecordSerializer
+
+
+class InventoryMovementOperationsView(ProtectedOperationsCollectionView):
+    queryset = InventoryMovement.objects.select_related("batch")
+    serializer_class = InventoryMovementSerializer

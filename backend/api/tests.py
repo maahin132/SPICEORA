@@ -1,4 +1,6 @@
 from io import BytesIO
+from datetime import timedelta
+from decimal import Decimal
 from pathlib import Path
 import tempfile
 
@@ -10,13 +12,20 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models.deletion import ProtectedError
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APITestCase
 
 from .models import (
+    CropSeason,
     ExportEnquiry,
+    Farm,
+    Harvest,
+    InventoryMovement,
     Product,
     ProductCategory,
+    ProcessingRecord,
+    ProductionBatch,
     product_image_upload_to,
 )
 
@@ -694,3 +703,659 @@ class ExportEnquiryAdminTests(APITestCase):
         response = self.client.get(reverse("admin:api_exportenquiry_add"))
 
         self.assertEqual(response.status_code, 403)
+
+
+class FarmTraceabilityTests(APITestCase):
+    def setUp(self):
+        today = timezone.localdate()
+        self.farm = Farm.objects.create(
+            reference="FARM-TEST-01",
+            name="Traceability test farm",
+            location="Test-only location",
+        )
+        self.season = CropSeason.objects.create(
+            reference="SEASON-TEST-01",
+            farm=self.farm,
+            crop_name="Test crop",
+            planting_date=today - timedelta(days=100),
+            expected_harvest_date=today - timedelta(days=10),
+            status=CropSeason.Status.HARVESTED,
+        )
+        self.harvest = Harvest.objects.create(
+            reference="HARVEST-TEST-01",
+            crop_season=self.season,
+            harvest_date=today - timedelta(days=5),
+            quantity=Decimal("1000"),
+            quantity_unit="kg",
+        )
+
+    def create_batch(self, **overrides):
+        fields = {
+            "reference": "BATCH-TEST-01",
+            "harvest": self.harvest,
+            "product_name": "Test crop batch",
+            "batch_date": self.harvest.harvest_date,
+            "initial_quantity": Decimal("800"),
+            "quantity_unit": "kg",
+        }
+        fields.update(overrides)
+        return ProductionBatch.objects.create(**fields)
+
+    def create_movement(self, batch, movement_type, quantity, unit="kg", **overrides):
+        fields = {
+            "batch": batch,
+            "movement_type": movement_type,
+            "quantity": Decimal(quantity),
+            "quantity_unit": unit,
+            "movement_date": timezone.localdate(),
+            "reason": "Test-only inventory event",
+        }
+        fields.update(overrides)
+        return InventoryMovement.objects.create(**fields)
+
+    def test_farm_area_requires_matching_positive_value_and_unit(self):
+        farm = Farm(
+            reference="FARM-AREA-TEST",
+            name="Area test farm",
+            location="Test-only location",
+            area=Decimal("2"),
+        )
+        with self.assertRaises(ValidationError) as error:
+            farm.full_clean()
+        self.assertIn("area", error.exception.message_dict)
+
+        farm.area_unit = Farm.AreaUnit.HECTARE
+        farm.area = Decimal("0")
+        with self.assertRaises(ValidationError) as error:
+            farm.full_clean()
+        self.assertIn("area", error.exception.message_dict)
+
+    def test_crop_season_rejects_expected_date_before_planting(self):
+        season = CropSeason(
+            reference="SEASON-DATE-TEST",
+            farm=self.farm,
+            crop_name="Test crop",
+            planting_date=timezone.localdate(),
+            expected_harvest_date=timezone.localdate() - timedelta(days=1),
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            season.full_clean()
+
+        self.assertIn("expected_harvest_date", error.exception.message_dict)
+
+    def test_harvest_rejects_nonpositive_quantity_and_invalid_dates(self):
+        harvest = Harvest(
+            reference="HARVEST-INVALID-TEST",
+            crop_season=self.season,
+            harvest_date=self.season.planting_date - timedelta(days=1),
+            quantity=Decimal("0"),
+            quantity_unit="kg",
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            harvest.full_clean()
+
+        self.assertIn("quantity", error.exception.message_dict)
+        self.assertIn("harvest_date", error.exception.message_dict)
+
+    def test_batch_is_traceable_and_creation_records_initial_receipt(self):
+        batch = self.create_batch()
+
+        self.assertEqual(batch.harvest.crop_season.farm, self.farm)
+        self.assertEqual(batch.harvest.crop_season, self.season)
+        self.assertEqual(batch.inventory_movements.count(), 1)
+        receipt = batch.inventory_movements.get()
+        self.assertEqual(
+            receipt.movement_type,
+            InventoryMovement.MovementType.PRODUCTION_RECEIPT,
+        )
+        self.assertEqual(receipt.quantity, batch.initial_quantity)
+        self.assertEqual(receipt.available_quantity_kg, Decimal("800"))
+
+    def test_batch_quantity_cannot_exceed_unallocated_harvest(self):
+        self.create_batch()
+        with self.assertRaises(ValidationError) as error:
+            self.create_batch(
+                reference="BATCH-TEST-02",
+                initial_quantity=Decimal("201"),
+            )
+        self.assertIn("initial_quantity", error.exception.message_dict)
+
+    def test_batch_historical_identity_cannot_be_changed(self):
+        batch = self.create_batch()
+        batch.initial_quantity = Decimal("700")
+
+        with self.assertRaises(ValidationError) as error:
+            batch.save()
+
+        self.assertIn("historical", str(error.exception).lower())
+
+    def test_processing_record_requires_valid_batch_dates_and_quantity_pairs(self):
+        batch = self.create_batch()
+        processing = ProcessingRecord(
+            batch=batch,
+            activity="Test activity",
+            activity_date=batch.batch_date - timedelta(days=1),
+            input_quantity=Decimal("2"),
+            input_unit="",
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            processing.full_clean()
+
+        self.assertIn("activity_date", error.exception.message_dict)
+        self.assertIn("input_quantity", error.exception.message_dict)
+
+    def test_processing_record_does_not_invent_inventory_events(self):
+        batch = self.create_batch()
+        processing = ProcessingRecord.objects.create(
+            batch=batch,
+            activity="Owner-recorded activity",
+            activity_date=timezone.localdate(),
+            description="Test event only.",
+        )
+
+        self.assertEqual(processing.batch, batch)
+        self.assertIsNone(processing.input_quantity)
+        self.assertEqual(batch.inventory_movements.count(), 1)
+        processing.description = "Attempted retrospective edit."
+        with self.assertRaises(ValidationError):
+            processing.save()
+        with self.assertRaises(ValidationError):
+            processing.delete()
+
+    def test_inventory_movement_reservation_release_and_dispatch_calculation(self):
+        batch = self.create_batch()
+        reservation = self.create_movement(
+            batch,
+            InventoryMovement.MovementType.RESERVATION,
+            "0.300",
+            unit="metric_tonne",
+        )
+        self.assertEqual(reservation.available_quantity_kg, Decimal("500"))
+
+        release = self.create_movement(
+            batch,
+            InventoryMovement.MovementType.RESERVATION_RELEASE,
+            "100",
+        )
+        self.assertEqual(release.available_quantity_kg, Decimal("600"))
+
+        dispatch = self.create_movement(
+            batch,
+            InventoryMovement.MovementType.DISPATCH,
+            "0.500",
+            unit="metric_tonne",
+        )
+        self.assertEqual(dispatch.available_quantity_kg, Decimal("300"))
+
+    def test_inventory_prevents_negative_available_stock_and_invalid_release(self):
+        batch = self.create_batch()
+        with self.assertRaises(ValidationError) as error:
+            self.create_movement(
+                batch,
+                InventoryMovement.MovementType.RESERVATION,
+                "801",
+            )
+        self.assertIn("quantity", error.exception.message_dict)
+
+        self.create_movement(
+            batch,
+            InventoryMovement.MovementType.RESERVATION,
+            "500",
+        )
+        with self.assertRaises(ValidationError) as error:
+            self.create_movement(
+                batch,
+                InventoryMovement.MovementType.RESERVATION_RELEASE,
+                "501",
+            )
+        self.assertIn("quantity", error.exception.message_dict)
+
+    def test_inventory_rejects_dispatch_beyond_physical_stock(self):
+        batch = self.create_batch()
+
+        with self.assertRaises(ValidationError) as error:
+            self.create_movement(
+                batch,
+                InventoryMovement.MovementType.DISPATCH,
+                "801",
+            )
+
+        self.assertIn("quantity", error.exception.message_dict)
+
+    def test_inventory_movements_are_immutable_and_backdating_is_rejected(self):
+        batch = self.create_batch()
+        movement = self.create_movement(
+            batch,
+            InventoryMovement.MovementType.PROCESSING_INCREASE,
+            "10",
+        )
+        movement.reason = "Edited after the fact"
+        with self.assertRaises(ValidationError):
+            movement.save()
+        with self.assertRaises(ValidationError):
+            movement.delete()
+
+        with self.assertRaises(ValidationError) as error:
+            self.create_movement(
+                batch,
+                InventoryMovement.MovementType.PROCESSING_INCREASE,
+                "1",
+                movement_date=timezone.localdate() - timedelta(days=1),
+            )
+        self.assertIn("movement_date", error.exception.message_dict)
+
+    def test_protected_foreign_keys_preserve_farm_to_batch_history(self):
+        batch = self.create_batch()
+        for record in (self.farm, self.season, self.harvest, batch):
+            with self.subTest(model=type(record).__name__):
+                with self.assertRaises(ProtectedError):
+                    record.delete()
+
+    def test_all_traceability_models_are_registered_in_admin(self):
+        for model in (
+            Farm,
+            CropSeason,
+            Harvest,
+            ProductionBatch,
+            ProcessingRecord,
+            InventoryMovement,
+        ):
+            with self.subTest(model=model.__name__):
+                self.assertTrue(admin.site.is_registered(model))
+
+    def test_operations_api_requires_staff_and_model_permissions(self):
+        url = reverse("operations-farm-list")
+
+        self.assertIn(self.client.get(url).status_code, (401, 403))
+
+        user_model = get_user_model()
+        ordinary_user = user_model.objects.create_user(
+            username="operations-regular",
+            password="test-only-password",
+        )
+        self.client.force_authenticate(ordinary_user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+        staff_user = user_model.objects.create_user(
+            username="operations-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(staff_user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+    def test_authorized_staff_can_create_and_list_farms(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff_user = get_user_model().objects.create_user(
+            username="farm-api-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(Farm)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="view_farm"),
+            Permission.objects.get(content_type=content_type, codename="add_farm"),
+        )
+        self.client.force_authenticate(staff_user)
+        url = reverse("operations-farm-list")
+        payload = {
+            "reference": "API-FARM-01",
+            "name": "API test farm",
+            "location": "Test-only location",
+            "area": None,
+            "area_unit": "",
+            "description": "",
+            "internal_notes": "Private test note",
+            "is_active": True,
+        }
+
+        created = self.client.post(url, payload, format="json")
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.data["reference"], "API-FARM-01")
+        self.assertEqual(created.data["internal_notes"], "Private test note")
+
+        listed = self.client.get(url)
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(listed.data["count"], 2)
+        self.assertEqual(len(listed.data["results"]), 2)
+
+    def test_staff_api_creates_traceable_season_harvest_batch_and_processing(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff_user = get_user_model().objects.create_user(
+            username="traceability-api-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        models = (Farm, CropSeason, Harvest, ProductionBatch, ProcessingRecord)
+        for model in models:
+            content_type = ContentType.objects.get_for_model(model)
+            staff_user.user_permissions.add(
+                Permission.objects.get(
+                    content_type=content_type,
+                    codename=f"add_{model._meta.model_name}",
+                )
+            )
+        self.client.force_authenticate(staff_user)
+        today = timezone.localdate()
+        farm_response = self.client.post(
+            reverse("operations-farm-list"),
+            {
+                "reference": "API-TRACE-FARM",
+                "name": "Traceability API test farm",
+                "location": "Test-only location",
+            },
+            format="json",
+        )
+        self.assertEqual(farm_response.status_code, 201)
+
+        season_response = self.client.post(
+            reverse("operations-crop-season-list"),
+            {
+                "reference": "API-TRACE-SEASON",
+                "farm_reference": "API-TRACE-FARM",
+                "crop_name": "Test crop",
+                "planting_date": (today - timedelta(days=10)).isoformat(),
+                "expected_harvest_date": today.isoformat(),
+                "status": CropSeason.Status.HARVESTED,
+            },
+            format="json",
+        )
+        self.assertEqual(season_response.status_code, 201)
+
+        harvest_response = self.client.post(
+            reverse("operations-harvest-list"),
+            {
+                "reference": "API-TRACE-HARVEST",
+                "crop_season_reference": "API-TRACE-SEASON",
+                "harvest_date": today.isoformat(),
+                "quantity": "200",
+                "quantity_unit": "kg",
+            },
+            format="json",
+        )
+        self.assertEqual(harvest_response.status_code, 201)
+
+        batch_response = self.client.post(
+            reverse("operations-batch-list"),
+            {
+                "reference": "API-TRACE-BATCH",
+                "harvest_reference": "API-TRACE-HARVEST",
+                "product_name": "Test crop",
+                "batch_date": today.isoformat(),
+                "initial_quantity": "150",
+                "quantity_unit": "kg",
+            },
+            format="json",
+        )
+        self.assertEqual(batch_response.status_code, 201)
+        self.assertEqual(
+            batch_response.data["farm_reference"],
+            "API-TRACE-FARM",
+        )
+        self.assertEqual(
+            batch_response.data["crop_season_reference"],
+            "API-TRACE-SEASON",
+        )
+        self.assertEqual(batch_response.data["available_quantity_kg"], "150.000")
+
+        processing_response = self.client.post(
+            reverse("operations-processing-record-list"),
+            {
+                "batch_reference": "API-TRACE-BATCH",
+                "activity": "Recorded test activity",
+                "activity_date": today.isoformat(),
+                "description": "Test-only processing record.",
+            },
+            format="json",
+        )
+        self.assertEqual(processing_response.status_code, 201)
+        self.assertEqual(
+            processing_response.data["batch_reference"],
+            "API-TRACE-BATCH",
+        )
+
+    def test_invalid_farm_payload_returns_field_errors(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff_user = get_user_model().objects.create_user(
+            username="invalid-farm-api-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(Farm)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="add_farm")
+        )
+        self.client.force_authenticate(staff_user)
+
+        response = self.client.post(
+            reverse("operations-farm-list"),
+            {
+                "reference": "API-FARM-INVALID",
+                "name": "Invalid farm",
+                "location": "Test-only location",
+                "area": "2",
+                "area_unit": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("area", response.data["errors"])
+
+    def test_operations_collection_is_paginated(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        Farm.objects.bulk_create(
+            [
+                Farm(
+                    reference=f"PAGINATION-{index:02}",
+                    name=f"Test farm {index}",
+                    location="Test-only location",
+                )
+                for index in range(26)
+            ]
+        )
+        staff_user = get_user_model().objects.create_user(
+            username="pagination-api-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(Farm)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="view_farm")
+        )
+        self.client.force_authenticate(staff_user)
+
+        first_page = self.client.get(reverse("operations-farm-list"))
+        second_page = self.client.get(
+            reverse("operations-farm-list"),
+            {"page": 2},
+        )
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(first_page.data["count"], 27)
+        self.assertEqual(len(first_page.data["results"]), 25)
+        self.assertEqual(len(second_page.data["results"]), 2)
+
+    def test_correction_movements_require_extra_approval_permission(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        batch = self.create_batch()
+        staff_user = get_user_model().objects.create_user(
+            username="inventory-api-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(InventoryMovement)
+        staff_user.user_permissions.add(
+            Permission.objects.get(
+                content_type=content_type,
+                codename="add_inventorymovement",
+            )
+        )
+        self.client.force_authenticate(staff_user)
+        payload = {
+            "batch_reference": batch.reference,
+            "movement_type": InventoryMovement.MovementType.CORRECTION_IN,
+            "quantity": "10",
+            "quantity_unit": "kg",
+            "movement_date": timezone.localdate().isoformat(),
+            "reason": "Approved test correction",
+            "internal_notes": "Staff-only test note.",
+        }
+        url = reverse("operations-inventory-movement-list")
+
+        denied = self.client.post(url, payload, format="json")
+        self.assertEqual(denied.status_code, 403)
+
+        staff_user.user_permissions.add(
+            Permission.objects.get(
+                content_type=content_type,
+                codename="approve_inventory_correction",
+            )
+        )
+        staff_user = get_user_model().objects.get(pk=staff_user.pk)
+        self.client.force_authenticate(staff_user)
+        approved = self.client.post(url, payload, format="json")
+        self.assertEqual(approved.status_code, 201)
+        correction = InventoryMovement.objects.get(
+            movement_type=InventoryMovement.MovementType.CORRECTION_IN
+        )
+        self.assertEqual(correction.available_quantity_kg, Decimal("810.000"))
+
+    def test_operations_api_does_not_allow_updates_or_deletes(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff_user = get_user_model().objects.create_user(
+            username="operations-view-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(Farm)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="change_farm")
+        )
+        self.client.force_authenticate(staff_user)
+
+        response = self.client.put(
+            reverse("operations-farm-list"),
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 405)
+
+    def test_staff_api_uses_session_authentication_and_csrf_for_writes(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        from rest_framework.test import APIClient
+
+        staff_user = get_user_model().objects.create_user(
+            username="csrf-farm-staff",
+            password="test-only-password",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(Farm)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="add_farm")
+        )
+        client = APIClient(enforce_csrf_checks=True)
+        client.force_login(staff_user)
+
+        response = client.post(
+            reverse("operations-farm-list"),
+            {
+                "reference": "CSRF-FARM-01",
+                "name": "CSRF test farm",
+                "location": "Test-only location",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Farm.objects.filter(reference="CSRF-FARM-01").exists())
+
+    def test_admin_lists_operational_records_and_disables_historical_deletion(self):
+        batch = self.create_batch()
+        admin_user = get_user_model().objects.create_superuser(
+            username="operations-admin",
+            email="operations-admin@example.com",
+            password="test-only-password",
+        )
+        self.client.force_login(admin_user)
+
+        farm_list = self.client.get(reverse("admin:api_farm_changelist"))
+        batch_change = self.client.get(
+            reverse("admin:api_productionbatch_change", args=(batch.pk,))
+        )
+        movement_change = self.client.get(
+            reverse(
+                "admin:api_inventorymovement_change",
+                args=(batch.inventory_movements.get().pk,),
+            )
+        )
+
+        self.assertEqual(farm_list.status_code, 200)
+        self.assertEqual(batch_change.status_code, 200)
+        self.assertContains(batch_change, "Inventory")
+        self.assertEqual(movement_change.status_code, 200)
+        self.assertNotContains(movement_change, 'name="_save"')
+        self.assertEqual(
+            self.client.get(
+                reverse(
+                    "admin:api_inventorymovement_delete",
+                    args=(batch.inventory_movements.get().pk,),
+                )
+            ).status_code,
+            403,
+        )
+
+    def test_admin_batch_creation_records_initial_inventory_receipt(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="batch-admin",
+            email="batch-admin@example.com",
+            password="test-only-password",
+        )
+        self.client.force_login(admin_user)
+
+        response = self.client.post(
+            reverse("admin:api_productionbatch_add"),
+            {
+                "reference": "ADMIN-BATCH-01",
+                "harvest": self.harvest.pk,
+                "product_name": "Test crop batch",
+                "batch_date": timezone.localdate().isoformat(),
+                "initial_quantity": "200",
+                "quantity_unit": "kg",
+                "status": ProductionBatch.Status.RECORDED,
+                "internal_notes": "Test-only admin record.",
+                "processing_records-TOTAL_FORMS": "0",
+                "processing_records-INITIAL_FORMS": "0",
+                "processing_records-MIN_NUM_FORMS": "0",
+                "processing_records-MAX_NUM_FORMS": "1000",
+                "inventory_movements-TOTAL_FORMS": "0",
+                "inventory_movements-INITIAL_FORMS": "0",
+                "inventory_movements-MIN_NUM_FORMS": "0",
+                "inventory_movements-MAX_NUM_FORMS": "1000",
+                "_save": "Save",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        batch = ProductionBatch.objects.get(reference="ADMIN-BATCH-01")
+        self.assertEqual(batch.inventory_movements.count(), 1)
+        self.assertEqual(
+            batch.inventory_movements.get().movement_type,
+            InventoryMovement.MovementType.PRODUCTION_RECEIPT,
+        )

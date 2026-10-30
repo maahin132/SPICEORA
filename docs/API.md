@@ -74,7 +74,37 @@ The server validates all values, rejects unknown request fields and invalid/inac
 
 ## Protected administrative operations
 
-There are no public admin API endpoints or buyer accounts. Authenticated Django admin is the staff interface for catalogue maintenance and enquiry triage. Staff can view, search, filter, update status, and add internal notes; public API responses contain only the opaque receipt reference and generic confirmation, never notes or enquiry details. Use least privilege, secure session settings, CSRF protection, strong unique staff credentials, and deployment-level access controls. Add a dedicated admin API only when a justified integration requires it and its authentication/authorization model is approved.
+There are no public admin API endpoints or buyer accounts. Authenticated Django admin is the staff interface for catalogue maintenance and enquiry triage. Staff can view, search, filter, update status, and add internal notes; public API responses contain only the opaque receipt reference and generic confirmation, never notes or enquiry details. Use least privilege, secure session settings, CSRF protection, strong unique staff credentials, and deployment-level access controls. The separate Phase 7 operations API below is private and limited to the documented farm/inventory collections; do not broaden its scope or expose it publicly without an approved authorization design.
+
+## Protected farm and inventory operations API
+
+Phase 7 adds private collection endpoints under `/api/v1/operations/`. These are not public catalogue endpoints and must only be called by staff-authorized tools:
+
+| Route | Methods | Django model permission |
+|---|---|---|
+| `/api/v1/operations/farms/` | `GET`, `POST` | `view_farm`, `add_farm` |
+| `/api/v1/operations/crop-seasons/` | `GET`, `POST` | `view_cropseason`, `add_cropseason` |
+| `/api/v1/operations/harvests/` | `GET`, `POST` | `view_harvest`, `add_harvest` |
+| `/api/v1/operations/batches/` | `GET`, `POST` | `view_productionbatch`, `add_productionbatch` |
+| `/api/v1/operations/processing-records/` | `GET`, `POST` | `view_processingrecord`, `add_processingrecord` |
+| `/api/v1/operations/inventory-movements/` | `GET`, `POST` | `view_inventorymovement`, `add_inventorymovement` |
+
+Every request also requires an authenticated Django staff user. Session authentication is used; unsafe requests require Django CSRF protection. Inventory correction movement types additionally require `approve_inventory_correction`. No HTTP Basic authentication, anonymous reads, public farm data, detail routes, update methods, or delete methods are provided. Admin is the interface for editable farm/season/harvest/batch metadata; processing and inventory records are immutable after creation.
+
+Collection responses use the standard paginated object (`count`, `next`, `previous`, `results`) with 25 records per page. `POST` creates one record and returns it with `201 Created`. Validation errors return `400` as `{ "errors": { "<field>": ["..."] } }`; missing staff authentication or model permissions returns `403` (or `401` when the authentication layer provides a challenge); unsupported methods return `405`. Related records are submitted by their unique reference string, e.g. `farm_reference`, `crop_season_reference`, `harvest_reference`, or `batch_reference`. Internal notes and supporting document references are visible only to authorized staff.
+
+The batch endpoint returns `crop_season_reference`, `farm_reference`, and current `available_quantity_kg` so the harvest lineage and stock are explicit. The inventory movement list returns immutable event data; query the batch collection for its current availability. Product and enquiry public contracts are unchanged.
+
+### Operation payloads
+
+- Farm: `reference`, `name`, `location`, optional paired `area`/`area_unit` (`acre` or `hectare`), `description`, `internal_notes`, `is_active`.
+- Crop season: `reference`, `farm_reference`, `crop_name`, optional `planting_date` and `expected_harvest_date`, `status`, `internal_notes`.
+- Harvest: `reference`, `crop_season_reference`, `harvest_date`, positive `quantity`, `quantity_unit` (`kg` or `metric_tonne`), `notes`.
+- Production batch: `reference`, `harvest_reference`, `product_name`, `batch_date`, positive `initial_quantity`, `quantity_unit`, `status`, `internal_notes`. Creation also writes the first production receipt atomically.
+- Processing record: `batch_reference`, `activity`, `activity_date`, optional paired input/output quantity and unit, `description`, `supporting_document_references`, `internal_notes`.
+- Inventory movement: optional server-generated `reference`, `batch_reference`, `movement_type`, positive `quantity`, `quantity_unit`, `movement_date`, required `reason`, `internal_notes`. Quantity is positive; movement type expresses direction.
+
+Inventory types are production receipt, processing increase/decrease, reservation, reservation release, dispatch, and approved correction increase/decrease. Batch creation automatically records the sole initial production receipt. See [database inventory rules](./DATABASE.md#inventory-ledger-and-calculation) for balance calculation, reservation, dispatch, chronology, and correction semantics.
 
 ## Validation and error handling
 
