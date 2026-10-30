@@ -2,11 +2,13 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
+    AccountProfile,
     CropSeason,
     ExportEnquiry,
     Farm,
     Harvest,
     InventoryMovement,
+    OTPChallenge,
     ProcessingRecord,
     Product,
     ProductCategory,
@@ -22,6 +24,77 @@ class ProductCategoryAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("sort_order", "name")
+
+
+@admin.register(AccountProfile)
+class AccountProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "full_name",
+        "email_key",
+        "mobile_number",
+        "email_verified",
+        "mobile_verified",
+    )
+    list_filter = ("email_verified", "mobile_verified")
+    search_fields = ("full_name", "email_key", "mobile_number")
+    readonly_fields = (
+        "user",
+        "full_name",
+        "email_key",
+        "mobile_number",
+        "email_verified",
+        "mobile_verified",
+        "created_at",
+        "updated_at",
+    )
+    fields = readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(OTPChallenge)
+class OTPChallengeAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "channel",
+        "purpose",
+        "attempts",
+        "expires_at",
+        "verified_at",
+        "consumed_at",
+    )
+    list_filter = ("channel", "purpose", "verified_at", "consumed_at")
+    search_fields = ("user__email", "user__username", "id")
+    readonly_fields = (
+        "id",
+        "user",
+        "channel",
+        "purpose",
+        "created_at",
+        "sent_at",
+        "expires_at",
+        "attempts",
+        "verified_at",
+        "consumed_at",
+    )
+    fields = readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Product)

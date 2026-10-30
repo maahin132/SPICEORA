@@ -1,21 +1,53 @@
 from django.urls import path
 
+from .auth_views import (
+    CSRFInitializationView,
+    CurrentAccountView,
+    LoginView,
+    LogoutView,
+    OperationsLoginView,
+    PasswordRecoveryResetView,
+    PasswordRecoveryStartView,
+    PasswordRecoveryVerifyView,
+    ProviderHealthView,
+    RegistrationView,
+    ResendRegistrationOTPView,
+    VerifyEmailView,
+    VerifyMobileView,
+)
 from .views import (
+    CropSeasonOperationsDetailView,
     ProductCategoryListView,
     ProductDetailView,
     ProductListView,
     ExportEnquiryCreateView,
+    FarmOperationsDetailView,
     CropSeasonOperationsView,
     FarmOperationsView,
+    HarvestOperationsDetailView,
     HarvestOperationsView,
     InventoryMovementOperationsView,
     ProcessingRecordOperationsView,
+    ProductionBatchOperationsDetailView,
     ProductionBatchOperationsView,
     health,
 )
 
 urlpatterns = [
     path("health/", health, name="health"),
+    path("v1/auth/csrf/", CSRFInitializationView.as_view(), name="auth-csrf"),
+    path("v1/auth/register/", RegistrationView.as_view(), name="auth-register"),
+    path("v1/auth/verify/email/", VerifyEmailView.as_view(), name="auth-verify-email"),
+    path("v1/auth/verify/mobile/", VerifyMobileView.as_view(), name="auth-verify-mobile"),
+    path("v1/auth/verify/resend/", ResendRegistrationOTPView.as_view(), name="auth-resend-otp"),
+    path("v1/auth/login/", LoginView.as_view(), name="auth-login"),
+    path("v1/auth/operations/login/", OperationsLoginView.as_view(), name="auth-operations-login"),
+    path("v1/auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("v1/auth/me/", CurrentAccountView.as_view(), name="auth-me"),
+    path("v1/auth/recovery/start/", PasswordRecoveryStartView.as_view(), name="auth-recovery-start"),
+    path("v1/auth/recovery/verify/", PasswordRecoveryVerifyView.as_view(), name="auth-recovery-verify"),
+    path("v1/auth/recovery/reset/", PasswordRecoveryResetView.as_view(), name="auth-recovery-reset"),
+    path("v1/auth/providers/health/", ProviderHealthView.as_view(), name="auth-provider-health"),
     path("v1/categories/", ProductCategoryListView.as_view(), name="product-category-list"),
     path("v1/enquiries/", ExportEnquiryCreateView.as_view(), name="enquiry-create"),
     path("v1/products/", ProductListView.as_view(), name="product-list"),
@@ -25,9 +57,19 @@ urlpatterns = [
         name="operations-farm-list",
     ),
     path(
+        "v1/operations/farms/<str:reference>/",
+        FarmOperationsDetailView.as_view(),
+        name="operations-farm-detail",
+    ),
+    path(
         "v1/operations/crop-seasons/",
         CropSeasonOperationsView.as_view(),
         name="operations-crop-season-list",
+    ),
+    path(
+        "v1/operations/crop-seasons/<str:reference>/",
+        CropSeasonOperationsDetailView.as_view(),
+        name="operations-crop-season-detail",
     ),
     path(
         "v1/operations/harvests/",
@@ -35,9 +77,19 @@ urlpatterns = [
         name="operations-harvest-list",
     ),
     path(
+        "v1/operations/harvests/<str:reference>/",
+        HarvestOperationsDetailView.as_view(),
+        name="operations-harvest-detail",
+    ),
+    path(
         "v1/operations/batches/",
         ProductionBatchOperationsView.as_view(),
         name="operations-batch-list",
+    ),
+    path(
+        "v1/operations/batches/<str:reference>/",
+        ProductionBatchOperationsDetailView.as_view(),
+        name="operations-batch-detail",
     ),
     path(
         "v1/operations/processing-records/",

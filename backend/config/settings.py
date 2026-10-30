@@ -1,13 +1,24 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
+
+def get_secret_key():
+    secret_key = os.getenv("DJANGO_SECRET_KEY", "")
+    if not secret_key or secret_key == "replace-with-a-long-random-secret":
+        raise ImproperlyConfigured(
+            "Set DJANGO_SECRET_KEY to a unique secret value before starting Django."
+        )
+    return secret_key
+
+
+SECRET_KEY = get_secret_key()
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"true", "1", "yes"}
 ALLOWED_HOSTS = [
     host.strip()
@@ -100,9 +111,38 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = os.getenv(
+    "DJANGO_SECURE_COOKIES", str(not DEBUG)
+).lower() in {"true", "1", "yes"}
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+SESSION_COOKIE_SAMESITE = os.getenv("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SAMESITE = os.getenv("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")
+
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("GOOGLE_SMTP_HOST", "")
+EMAIL_PORT = int(os.getenv("GOOGLE_SMTP_PORT", "587"))
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = os.getenv("GOOGLE_SMTP_LOGIN", "")
+EMAIL_HOST_PASSWORD = os.getenv("GOOGLE_SMTP_APP_PASSWORD", "").replace(" ", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "")
 
 REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "public_enquiry": "5/hour",
+        "auth_registration": "5/hour",
+        "auth_login": "10/minute",
+        "auth_otp": "10/hour",
+        "auth_recovery": "5/hour",
+        "auth_account": "10/hour",
     },
 }

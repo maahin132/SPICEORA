@@ -6,6 +6,7 @@ const navigation = [
   { href: '/products/', label: 'Products' },
   { href: '/#about', label: 'About SPICEORA' },
   { href: '/#process', label: 'The enquiry path' },
+  { href: '/login', label: 'Customer sign in' },
 ]
 
 function NavigationLinks({ className, onNavigate }) {

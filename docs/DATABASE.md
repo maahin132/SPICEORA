@@ -10,6 +10,8 @@ Phase 7 migration `api.0004_farm_cropseason_harvest_productionbatch_and_more` cr
 
 The configured development connection was verified as `spiceora_db` at `localhost`. The two catalogue tables use MySQL collation `utf8mb4_0900_ai_ci`. No WoodHub or unrelated database was accessed or changed.
 
+Phase 8 migration `api.0005_customer_account_otp` adds only `api_accountprofile` and `api_otpchallenge`, with unique email/mobile values, a one-to-one relationship to Django's existing auth user, and an OTP query index. Generated MySQL SQL was inspected before application: it creates two tables and their indexes/foreign keys; it does not alter or replace the existing user table and contains no data migration or seed records. It was applied to the verified `spiceora_db`. After application, counts remained six categories, zero products, one existing enquiry, zero rows in each farm/traceability table, and zero account profiles or OTP challenges. Existing user rows were not enumerated or changed.
+
 ## Implemented catalogue entities
 
 ### `ProductCategory`
@@ -85,6 +87,20 @@ Protected batch FK, free-text activity, actual activity date, optional paired in
 ### `InventoryMovement`
 
 Unique reference, protected batch FK, explicit movement type, positive quantity and unit, movement date, required reason/reference, private notes, and creation timestamp. Records are append-only and cannot be deleted through model/admin/API operations. Movement dates cannot predate the batch, be in the future, or be earlier than the latest movement for that batch. Corrections are new, permission-gated movements; do not edit or overwrite the ledger.
+
+## Phase 8 account and verification entities
+
+The standard Django `auth.User` model remains in place. There is no custom user-model replacement and no migration of existing staff users.
+
+### `AccountProfile`
+
+One-to-one relation to an auth user; full name; unique normalized email and E.164 mobile number; independent email/mobile verification flags; timestamps. Public registration creates only inactive, non-staff users. A customer becomes active after email verification only; `mobile_verified` remains false because SMS is deferred. Staff authorization remains an administrator-controlled `auth.User.is_staff` and permission assignment; registration cannot set either staff or superuser flags.
+
+### `OTPChallenge`
+
+UUID challenge identifier; user FK; channel (`email` or reserved `sms` choice); purpose (`registration` or `password_reset`); Django password-hash encoded six-digit code; issue/send/expiry times; incorrect-attempt count; verified and consumed timestamps. Active registration and recovery issue email challenges only; SMS is disabled. A challenge is valid for five minutes, permits at most five incorrect attempts, and is single-use. Resend rotates the hash and resets attempts only after the 60-second cooldown. Challenge identifiers are opaque workflow handles, not OTPs or login credentials. OTP hashes are not included in API responses and are not displayed in admin.
+
+No existing user rows are automatically assigned profiles or interpreted as verified customers. OTP challenge cleanup/retention automation is not yet configured; configure a retention policy before production use.
 
 ## Inventory ledger and calculation
 

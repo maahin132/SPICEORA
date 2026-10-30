@@ -6,7 +6,7 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. Phase 5 improves product/category admin content workflows, protects enquiry-linked products from deletion, and validates product image uploads. Phase 6 prepares owner-verified catalogue content through a non-imported CSV template, improves empty-state enquiry navigation, and applies route-aware browser titles and descriptions without adding product fields or records. Phase 7 adds private farm-to-inventory records, immutable stock movements, Django Admin workflows, and paginated staff-only API collections. No notification provider or multi-item quote workflow is configured.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. Phase 5 improves product/category admin content workflows, protects enquiry-linked products from deletion, and validates product image uploads. Phase 6 prepares owner-verified catalogue content through a non-imported CSV template, improves empty-state enquiry navigation, and applies route-aware browser titles and descriptions without adding product fields or records. Phase 7 adds private farm-to-inventory records, immutable stock movements, Django Admin workflows, and paginated staff-only API collections. Phase 8 adds customer identity verification, session authentication, password recovery, staff-only operations routes, and an API-backed operations console. Provider delivery remains dependent on real environment configuration and tests.
 
 The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `EnquiryPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` for API calls and `useCatalogRequest.js` for read/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
@@ -47,12 +47,21 @@ The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`,
 ### Phase 7 farm-to-inventory operations
 
 - Operational records follow `Farm → CropSeason → Harvest → ProductionBatch → ProcessingRecord / InventoryMovement`. Crop names are staff-entered, not seeded from the public product catalogue; no farm or production records are created by migrations.
-- Django Admin is the interactive staff interface. Protected `/api/v1/operations/` collection routes require a staff session, per-model Django view/add permissions, and CSRF validation for writes. They are paginated and support list/create only; editing/deactivation/status changes use Django Admin, while processing and inventory events are append-only.
+- Django Admin remains available. Protected `/api/v1/operations/` collection routes require a staff session, per-model Django permissions, and CSRF validation for writes. Collections are paginated; farm/season/harvest/batch metadata also has reference detail read/update routes. Processing and inventory events remain append-only.
 - New production batches must reference a harvest and allocate no more than its remaining harvest quantity. Batch creation atomically records the initial quantity as a production-receipt movement. Harvest and batch units support kilograms and metric tonnes with stock normalized to kilograms.
 - Inventory is a movement ledger, not a mutable balance field. On-hand quantity changes with production receipt, processing increase/decrease, dispatch, and approved corrections. Reservations and releases alter reserved quantity; dispatch consumes reserved stock first. Available quantity is `on_hand_kg - reserved_kg`. Outflows/reservations are validated under a batch row lock; negative available or physical stock is rejected.
 - A processing record is factual documentation only and does not automatically alter inventory; staff record any actual stock effect as a separate movement. No facility, method, certification, processing capability, or export readiness is implied.
 - Farm/season/harvest/batch references are protected from deletion. Batch identity and source quantity, processing records, and inventory movements cannot be retrospectively rewritten; use a new movement for an approved correction.
-- No custom React operations route was added: the public SPA has no staff login, session/CSRF handling, or authorization UX. Do not expose operational endpoints through public pages; a separate secure staff frontend requires an approved authentication design.
+- Operations data remains private and is never fetched by anonymous public routes.
+
+### Phase 8 authentication and operations console
+
+- The existing Django `auth.User` remains the identity source; there is no replacement user model. A new one-to-one `AccountProfile` stores normalized unique email/mobile values and verification state. Public registration creates inactive non-staff accounts and activates them after email OTP verification only. Mobile numbers are collected but remain unverified.
+- OTP challenges have five-minute expiry, five failed-attempt maximum, one-use verification, hashed code storage, a 60-second resend cooldown, account and IP throttles, and generic email recovery responses. Email delivery is restricted to personal Gmail SMTP at `smtp.gmail.com:587` with TLS for low-volume testing. Missing or failing settings return a safe error; no provider fallback is permitted. SMS is disabled and cannot make a provider request.
+- Session authentication is used instead of JWT. The browser obtains a CSRF token from `/api/v1/auth/csrf/`, keeps it in memory, sends it in `X-CSRFToken`, and uses credentialed HTTP-only session/CSRF cookies. Passwords, OTPs, CSRF tokens, and session identifiers are not persisted to local storage.
+- Customer email login and staff operations login use separate routes and enforce distinct roles; unverified mobile login and SMS recovery are disabled. Staff access remains backend-gated by `is_staff` and the existing per-model permissions on every operations API request; customer registration rejects unknown privilege fields and cannot create staff accounts.
+- React routes cover account registration, channel verification, customer/staff login, recovery, password reset, and the operations dashboard/collections. Dashboard visibility is a convenience based on the session's permission list; Django permissions remain authoritative.
+- Operations data supports real list/create flows; farms, crop seasons, harvests and batches can be edited only with the corresponding model `change_*` permission. Processing and inventory histories remain immutable. No delete route is added.
 
 ## Proposed production architecture
 
@@ -64,8 +73,9 @@ Buyer browser
   ├─ reusable presentation and form components
   └─ typed-by-convention JS API client
        └─ HTTPS /api/v1/* → Django REST Framework
-                             ├─ public read serializers/views
-                             ├─ public enquiry validation/service
+                             ├─ public catalogue/enquiry API
+                             ├─ account, OTP and session API
+                             ├─ permission-gated operations API
                              ├─ protected Django admin
                              └─ MySQL
 ```
@@ -99,7 +109,7 @@ Use a consistent JSON error envelope and appropriate HTTP status codes. Distingu
 
 ## Configuration and deployment
 
-Keep `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, database credentials, allowed origins, and any future rate limits in environment-specific secret/configuration stores. Never place secrets in frontend build variables, source control, or browser responses. Production requires HTTPS, a production WSGI/ASGI server, controlled migrations, static/media storage policy, backups, logs/alerts, restore tests, and a documented rollback plan. Hosting provider and topology require owner approval.
+Keep `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, database credentials, Gmail SMTP login/App Password, allowed origins, and any future rate limits in environment-specific secret/configuration stores. Never place secrets in frontend build variables, source control, or browser responses. Personal Gmail SMTP is for low-volume testing, not a production delivery guarantee. Production requires HTTPS, a production WSGI/ASGI server, controlled migrations, static/media storage policy, backups, logs/alerts, restore tests, and a documented rollback plan. Hosting provider and topology require owner approval.
 
 ## Deferred choices
 

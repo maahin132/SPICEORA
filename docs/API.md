@@ -74,24 +74,28 @@ The server validates all values, rejects unknown request fields and invalid/inac
 
 ## Protected administrative operations
 
-There are no public admin API endpoints or buyer accounts. Authenticated Django admin is the staff interface for catalogue maintenance and enquiry triage. Staff can view, search, filter, update status, and add internal notes; public API responses contain only the opaque receipt reference and generic confirmation, never notes or enquiry details. Use least privilege, secure session settings, CSRF protection, strong unique staff credentials, and deployment-level access controls. The separate Phase 7 operations API below is private and limited to the documented farm/inventory collections; do not broaden its scope or expose it publicly without an approved authorization design.
+The anonymous catalogue and enquiry APIs do not expose admin functions. The customer account and staff operations APIs described below use Django sessions and CSRF protection. Authenticated Django admin remains the staff interface for catalogue and enquiry administration. Public enquiry responses contain only an opaque receipt reference and generic confirmation, never notes or enquiry details.
 
 ## Protected farm and inventory operations API
 
-Phase 7 adds private collection endpoints under `/api/v1/operations/`. These are not public catalogue endpoints and must only be called by staff-authorized tools:
+Phase 7 adds private collection endpoints under `/api/v1/operations/`. Phase 8 adds reference-based `GET`/`PATCH` detail routes for farms, seasons, harvests and batches; processing and inventory events remain append-only. Every endpoint still requires an active staff session and per-model permissions.
 
 | Route | Methods | Django model permission |
 |---|---|---|
 | `/api/v1/operations/farms/` | `GET`, `POST` | `view_farm`, `add_farm` |
+| `/api/v1/operations/farms/{reference}/` | `GET`, `PATCH` | `view_farm`, `change_farm` |
 | `/api/v1/operations/crop-seasons/` | `GET`, `POST` | `view_cropseason`, `add_cropseason` |
+| `/api/v1/operations/crop-seasons/{reference}/` | `GET`, `PATCH` | `view_cropseason`, `change_cropseason` |
 | `/api/v1/operations/harvests/` | `GET`, `POST` | `view_harvest`, `add_harvest` |
+| `/api/v1/operations/harvests/{reference}/` | `GET`, `PATCH` | `view_harvest`, `change_harvest` |
 | `/api/v1/operations/batches/` | `GET`, `POST` | `view_productionbatch`, `add_productionbatch` |
+| `/api/v1/operations/batches/{reference}/` | `GET`, `PATCH` | `view_productionbatch`, `change_productionbatch` |
 | `/api/v1/operations/processing-records/` | `GET`, `POST` | `view_processingrecord`, `add_processingrecord` |
 | `/api/v1/operations/inventory-movements/` | `GET`, `POST` | `view_inventorymovement`, `add_inventorymovement` |
 
-Every request also requires an authenticated Django staff user. Session authentication is used; unsafe requests require Django CSRF protection. Inventory correction movement types additionally require `approve_inventory_correction`. No HTTP Basic authentication, anonymous reads, public farm data, detail routes, update methods, or delete methods are provided. Admin is the interface for editable farm/season/harvest/batch metadata; processing and inventory records are immutable after creation.
+Every request also requires an authenticated Django staff user. Session authentication is used; unsafe requests require Django CSRF protection. Inventory correction movement types additionally require `approve_inventory_correction`. No HTTP Basic authentication, anonymous reads, public farm data, or delete methods are provided. Processing and inventory records are immutable after creation.
 
-Collection responses use the standard paginated object (`count`, `next`, `previous`, `results`) with 25 records per page. `POST` creates one record and returns it with `201 Created`. Validation errors return `400` as `{ "errors": { "<field>": ["..."] } }`; missing staff authentication or model permissions returns `403` (or `401` when the authentication layer provides a challenge); unsupported methods return `405`. Related records are submitted by their unique reference string, e.g. `farm_reference`, `crop_season_reference`, `harvest_reference`, or `batch_reference`. Internal notes and supporting document references are visible only to authorized staff.
+Collection responses use the standard paginated object (`count`, `next`, `previous`, `results`) with 25 records per page. `POST` creates one record and returns it with `201 Created`; supported metadata detail routes use `PATCH` and require `change_*` permission. Validation errors return `400` as `{ "errors": { "<field>": ["..."] } }`; missing staff authentication or model permissions returns `403` (or `401` when the authentication layer provides a challenge); unsupported methods return `405`. Related records are submitted by their unique reference string, e.g. `farm_reference`, `crop_season_reference`, `harvest_reference`, or `batch_reference`. Internal notes and supporting document references are visible only to authorized staff.
 
 The batch endpoint returns `crop_season_reference`, `farm_reference`, and current `available_quantity_kg` so the harvest lineage and stock are explicit. The inventory movement list returns immutable event data; query the batch collection for its current availability. Product and enquiry public contracts are unchanged.
 
@@ -120,3 +124,29 @@ Inventory types are production receipt, processing increase/decrease, reservatio
 Prefer a same-origin production deployment. If origins are separated, allow only exact approved frontend origins. Public anonymous JSON submission does not send browser credentials/cookies. Admin remains session-authenticated and CSRF-protected; do not disable CSRF globally. Configure `CSRF_TRUSTED_ORIGINS` only for actual HTTPS admin origins if required. The current CORS configuration is development foundation, not a complete production security policy.
 
 See [application architecture](./ARCHITECTURE.md) and [security](./SECURITY.md).
+
+## Phase 8 account and authentication API
+
+Unsafe authentication requests require a CSRF token. First call `GET /api/v1/auth/csrf/` with browser credentials; it returns a `csrf_token` for in-memory use and sets the CSRF cookie. Send that token in `X-CSRFToken` on `POST` requests. The React client keeps it in memory only. Browser requests use Django session cookies; never persist passwords, OTPs, session identifiers or CSRF tokens in local storage.
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/v1/auth/csrf/` | `GET` | Initialize a CSRF cookie and return a request token |
+| `/api/v1/auth/register/` | `POST` | Create an inactive customer account and send one email OTP |
+| `/api/v1/auth/verify/email/` | `POST` | Verify one email OTP |
+| `/api/v1/auth/verify/mobile/` | `POST` | Return `410 Gone`; mobile verification is deferred and no SMS is sent |
+| `/api/v1/auth/verify/resend/` | `POST` | Resend the pending email challenge after cooldown |
+| `/api/v1/auth/login/` | `POST` | Customer login by registered, email-verified email address and password |
+| `/api/v1/auth/operations/login/` | `POST` | Staff login by registered staff email and password |
+| `/api/v1/auth/logout/` | `POST` | Invalidate the current Django session |
+| `/api/v1/auth/me/` | `GET` | Return the current customer/staff identity and staff permission codenames, or `{"user":null}` |
+| `/api/v1/auth/recovery/start/` | `POST` | Start email-only recovery; response is generic regardless of account existence |
+| `/api/v1/auth/recovery/verify/` | `POST` | Verify a single-use recovery OTP |
+| `/api/v1/auth/recovery/reset/` | `POST` | Set a new password after OTP verification and invalidate existing sessions |
+| `/api/v1/auth/providers/health/` | `GET` | Staff-only Gmail SMTP configured and SMS unavailable indicators |
+
+Registration payload fields: `full_name`, `email`, `mobile_number` (valid international number with country code), `password`, and `confirm_password`. For syntactically valid submissions with valid passwords, new registrations, already-registered email/mobile values, and email delivery failures receive the same HTTP 201 response shape and generic acknowledgement. A duplicate or delivery failure does not create an account, persist a challenge, or send an OTP; its opaque `challenge_id` is not backed by a challenge. Database uniqueness constraints remain authoritative for concurrent requests. Never interpret the acknowledgement as proof that an account was created or an email was sent. For a newly created account with successful delivery, the returned challenge is valid and email verification activates the account; `mobile_verified` remains `false` until a future SMS verification feature is explicitly approved and implemented. Customer accounts cannot set staff flags. Staff users must be created/authorized by an administrator.
+
+OTP payloads use `challenge_id` and `code`; recovery start accepts `identity` as the registered email (an optional `channel` must be `email`); SMS recovery is rejected. Recovery reset accepts `flow_id`, `password`, and `confirm_password`. Codes are cryptographically generated six-digit values, stored only as Django password hashes, expire after five minutes, permit at most five incorrect attempts, and can be verified once. Resends have a 60-second cooldown. DRF throttles limit requests by IP; an additional hashed account-identity throttle applies per account without placing raw identifiers in cache keys. `/api/v1/auth/me/` includes `mobile_verified` so clients never infer mobile verification from account activation.
+
+For the current no-cost, low-volume setup, the only permitted email provider is personal Gmail SMTP: `EMAIL_PROVIDER=gmail`, `GOOGLE_SMTP_HOST=smtp.gmail.com`, `GOOGLE_SMTP_PORT=587`, TLS, `GOOGLE_SMTP_LOGIN` (the full Gmail address), `GOOGLE_SMTP_APP_PASSWORD` (Google App Password, not the normal account password), and `DEFAULT_FROM_EMAIL` matching the Gmail address. App Passwords require Google 2-Step Verification and may not be available on some managed or protected accounts. The application fails closed if settings are missing or differ from the approved Gmail host/port/TLS/sender configuration; there is no provider fallback. This is a personal-account workaround for low-volume testing, not a production transactional email guarantee; Google can impose quotas or block suspicious sending. No SMS provider is configured or called. Provider health reports readiness only, not successful delivery. Registration returns the generic acknowledgement on SMTP failure and rolls back account/challenge creation; recovery remains generic to avoid account enumeration. Owner-approved registration and forgot-password OTP deliveries were tested and receipt confirmed, but this is not a production delivery guarantee.

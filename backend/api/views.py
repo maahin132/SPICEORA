@@ -559,6 +559,60 @@ class ProtectedOperationsCollectionView(APIView):
         )
 
 
+class ProtectedOperationsDetailView(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAdminUser, StaffModelPermissions)
+    queryset = None
+    serializer_class = None
+
+    def get_object(self, reference):
+        return get_object_or_404(self.queryset, reference=reference)
+
+    def get(self, request, reference):
+        serializer = self.serializer_class(
+            self.get_object(reference),
+            context={"request": request},
+        )
+        return Response(serializer.data)
+
+    def patch(self, request, reference):
+        instance = self.get_object(reference)
+        if not isinstance(request.data, dict):
+            return Response(
+                {"errors": {"non_field_errors": ["Submit a JSON object."]}},
+                status=400,
+            )
+        serializer = self.serializer_class(
+            instance,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        unknown_fields = set(request.data) - set(serializer.fields)
+        if unknown_fields:
+            return Response(
+                {
+                    "errors": {
+                        field: ["Unknown field."]
+                        for field in sorted(unknown_fields)
+                    }
+                },
+                status=400,
+            )
+        if not serializer.is_valid():
+            return Response({"errors": serializer.errors}, status=400)
+        try:
+            instance = serializer.save()
+        except DjangoValidationError as error:
+            return Response(
+                {"errors": model_validation_errors(error)},
+                status=400,
+            )
+        return Response(
+            self.serializer_class(instance, context={"request": request}).data
+        )
+
+
 class FarmOperationsView(ProtectedOperationsCollectionView):
     queryset = Farm.objects.all()
     serializer_class = FarmSerializer
@@ -589,3 +643,25 @@ class ProcessingRecordOperationsView(ProtectedOperationsCollectionView):
 class InventoryMovementOperationsView(ProtectedOperationsCollectionView):
     queryset = InventoryMovement.objects.select_related("batch")
     serializer_class = InventoryMovementSerializer
+
+
+class FarmOperationsDetailView(ProtectedOperationsDetailView):
+    queryset = Farm.objects.all()
+    serializer_class = FarmSerializer
+
+
+class CropSeasonOperationsDetailView(ProtectedOperationsDetailView):
+    queryset = CropSeason.objects.select_related("farm")
+    serializer_class = CropSeasonSerializer
+
+
+class HarvestOperationsDetailView(ProtectedOperationsDetailView):
+    queryset = Harvest.objects.select_related("crop_season")
+    serializer_class = HarvestSerializer
+
+
+class ProductionBatchOperationsDetailView(ProtectedOperationsDetailView):
+    queryset = ProductionBatch.objects.select_related(
+        "harvest__crop_season__farm"
+    )
+    serializer_class = ProductionBatchSerializer

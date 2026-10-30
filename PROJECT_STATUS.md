@@ -18,11 +18,13 @@
 
 **Phase 7 — own farm and crop traceability foundation:** Implemented. Added private farm, season, harvest, production batch, processing-event, and inventory-ledger models; Django Admin workflows; and paginated staff-only APIs. The reviewed additive migration is applied to `spiceora_db`; no farm or operational records were seeded.
 
+**Phase 8 — email-first authentication and operations dashboard:** In progress. Customer registration activates after email OTP only; validated mobile numbers remain unverified. Login and recovery use email only, and SMS is deferred. Personal Gmail SMTP is configured and owner-approved registration and forgot-password OTP receipts were confirmed; Gmail remains a low-volume testing option, not production-grade transactional email.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 6 baseline was verified before this phase.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 7 baseline was verified before this phase.
 - Latest credential re-verification: 2026-10-28. The `.env` password was read only in process and was never displayed.
 
 ### Implemented
@@ -34,11 +36,43 @@
 - Phase 5 Django admin product/category content workflow, protected related-record deletion, product image preview and validated UUID-named image uploads.
 - Phase 6 owner content intake guidance and six-row blank draft CSV; route-specific browser titles and meta descriptions use only approved catalogue name/summary fields, and empty catalogue pages provide an enquiry CTA.
 - Phase 7 private traceability models, protected staff APIs, admin workflows, append-only processing/inventory records, and movement-derived stock calculations; no custom operations UI was added because the public frontend has no secure staff authentication/CSRF flow.
+- Phase 8 Django account profile and hashed OTP challenge models, distinct customer/staff login, Gmail-only email delivery, email-only recovery, session/CSRF endpoints, account/IP throttles, and React authentication/operations routes. Mobile numbers are captured but explicitly unverified; SMS is disabled. Public registration cannot grant staff access.
 - Product image uploads accept JPEG, PNG and WebP content up to 5 MiB and 8,000 px per side / 40 megapixels; existing image paths are retained. Local development media is supported; production image storage is not configured.
 - React `/enquiry/` form with accessible labels, client/server validation, duplicate-submit prevention, pending/success/error states, and product-specific preselection from detail pages.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
 - Local Git `main` branch initialized with the supplied GitHub URL as `origin`.
+
+### Phase 8 authentication and operations foundation
+
+- The existing Django auth user model is preserved. `AccountProfile` adds unique normalized email/mobile and independent verification flags; `OTPChallenge` stores hashed six-digit codes and challenge state. Public registration creates inactive non-staff accounts and activates after email verification only. The API reports `mobile_verified=false`; there is no mobile-login or mobile-verification path that can mark it true.
+- Email is restricted to personal Gmail SMTP (`smtp.gmail.com:587`, TLS) using a Google App Password; no generic SMTP fallback or other provider is allowed. This is a low-volume testing option, not production-grade transactional email; Google may rate-limit or block sending. SMS is disabled, makes no network calls, and SMS recovery requests are rejected. Email recovery remains generic; staff-only provider health reports readiness only.
+- Added generic recovery initiation, separate customer/staff session login, current-user/logout/CSRF endpoints, password reset and session invalidation. Existing staff role and model-permission gates are unchanged.
+- OTP lifetime is five minutes, max incorrect attempts is five, codes are single-use, and resend cooldown is 60 seconds. IP-scoped and hashed account-identity throttles apply. The local-memory cache is not suitable for production multi-worker abuse controls.
+- Added React routes `/register`, `/verify/email`, `/verify/mobile`, `/login`, `/forgot-password`, `/forgot-password/verify`, `/new-password`, `/operations/login`, `/operations`, and staff-protected farm, season, harvest, batch, processing and inventory screens. Operations APIs enforce staff/model permissions; no token or password is stored in localStorage.
+- Migration source/generated SQL for `api.0005_customer_account_otp` were reviewed and found additive (two new tables only); applied to `spiceora_db`. Post-migration counts were six categories, zero products, one existing enquiry, no farm/traceability rows, and no new profiles/challenges. No user or enquiry content was read or changed.
+- Gmail SMTP is configured in the ignored repository-root `.env`; Django loaded the approved Gmail host/port, TLS, sender/login match, and App Password without displaying credential values. One registration-style OTP was accepted by SMTP and receipt was confirmed by the owner. The actual forgot-password endpoint was also exercised against an owner-approved inbox: a temporary verified customer and recovery challenge were created inside a database transaction, the endpoint returned 202 and SMTP accepted the message, and the transaction was rolled back. The owner confirmed receipt. No temporary account/challenge remains; no password reset was performed. SMS remains disabled. Gmail is suitable only for low-volume testing and is not a production delivery guarantee. Do not use a paid email/SMS service. Phase 8 remains uncommitted and unpushed for owner review.
+- Registration account-enumeration fix: valid new, duplicate email/mobile, and email-delivery-failure submissions return the same generic HTTP 201 response shape. Duplicates and delivery failures do not create accounts/challenges or send OTPs; a random non-persisted challenge ID is returned. Database uniqueness constraints remain authoritative. Responses have a one-second minimum duration; synchronous SMTP can exceed it, so constant-time behavior is not claimed.
+
+### Phase 8 verification (in progress)
+
+| Check | Result |
+|---|---|
+| Pre-migration database target and record counts | Passed; target `spiceora_db`; six categories, zero products, one enquiry, zero Phase 7 operational rows |
+| Migration source and generated MySQL SQL | Passed; two additive account/OTP tables, no existing table alteration or data migration |
+| Migration application/state | Passed; `api.0005_customer_account_otp` applied; current schema matches models |
+| Post-migration content preservation | Verified; category/product/enquiry/operations counts unchanged; new profile/challenge tables empty |
+| Django checks | Passed; `check`, `check --database default`, `migrate --check`, and `makemigrations --check --dry-run` |
+| Targeted email-first authentication tests | Passed; 23 auth tests within isolated SQLite suite; mocked email only and no SMS/network calls |
+| Full backend suite | Passed; 85 tests using isolated SQLite |
+| Frontend lint/build | Passed; `npm run lint` and `npm run build` |
+| Browser/responsive QA | Passed for email-first registration safe-failure state, mobile-deferred page, email-only recovery/login labels, unauthenticated operations redirect, and staff dashboard on isolated SQLite. Registration page checked at 320, 390, 768, 1024 and 1440 CSS px without horizontal overflow. Full operations CRUD/error-state coverage remains pending. |
+| Gmail SMTP configuration and registration OTP delivery | Passed; Django loaded Gmail settings with credentials withheld; one registration-style OTP was accepted by SMTP and receipt was confirmed by the owner. |
+| Forgot-password live delivery | Passed; actual recovery-start endpoint returned 202 and SMTP accepted a password-reset OTP to the approved inbox; owner confirmed receipt. Temporary verified test account/challenge were rolled back; no password was reset. |
+| SMS verification/recovery | Deferred and disabled; no SMS provider is called |
+| Migration drift / MySQL check | Passed; no model changes detected, configured `spiceora_db` check passed, and no Phase 8 schema changes were made in this adjustment |
+| Documentation / credential-pattern scan / `.env` check / diff whitespace | Passed; local Markdown links and high-confidence credential-pattern scan passed; `.env` remains ignored/untracked; `git diff --check` passed |
+| Git commit/push | Intentionally withheld for owner review. Phase 8 remains uncommitted and unpushed. |
 
 ### Phase 1 planning deliverables
 
@@ -269,4 +303,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–7 are implemented. Contact details, publishable product content and images, optional product claims/evidence, privacy/retention policy, production abuse controls, notification setup, staff assignments, and operational policies remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 8.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–7 are implemented; Phase 8 is in progress and remains blocked on real email/SMS delivery verification and final browser/security checks. Contact details, publishable product content and images, optional product claims/evidence, privacy/retention policy, production abuse controls, staff assignments, and operational policies remain owner-confirmation items. Do not start Phase 9 without explicit owner approval.

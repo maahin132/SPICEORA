@@ -5,6 +5,7 @@ from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.conf import settings
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -780,6 +781,61 @@ class InventoryMovement(models.Model):
 
     def __str__(self):
         return f"{self.reference} — {self.get_movement_type_display()}"
+
+
+class AccountProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="account_profile",
+    )
+    full_name = models.CharField(max_length=160)
+    email_key = models.EmailField(max_length=254, unique=True)
+    mobile_number = models.CharField(max_length=16, unique=True)
+    email_verified = models.BooleanField(default=False)
+    mobile_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.email_key
+
+
+class OTPChallenge(models.Model):
+    class Channel(models.TextChoices):
+        EMAIL = "email", "Email"
+        SMS = "sms", "SMS"
+
+    class Purpose(models.TextChoices):
+        REGISTRATION = "registration", "Registration"
+        PASSWORD_RESET = "password_reset", "Password reset"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="otp_challenges",
+    )
+    channel = models.CharField(max_length=8, choices=Channel.choices)
+    purpose = models.CharField(max_length=20, choices=Purpose.choices)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=("user", "purpose", "channel", "-created_at"),
+                name="otp_account_scope_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id} — {self.purpose} — {self.channel}"
 
 
 def quantity_to_kg(quantity, unit):

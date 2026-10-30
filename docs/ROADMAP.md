@@ -48,7 +48,13 @@ Route-specific title and description metadata is client-side only. Review server
 
 The Django Admin and protected session-authenticated, per-model-permission API are the current staff surfaces. The public React app does not have secure staff authentication or CSRF handling, so there is no operations frontend. Before production use, define operational reference conventions, staff access assignments, reservation/order linkage, stock correction approval ownership, backup/audit controls, and a secure staff frontend only if needed. Exercise MySQL row-lock behavior under concurrency in a representative deployment; the isolated SQLite suite does not prove that behavior.
 
-Phase 7 stops at the internal traceability foundation. Do not begin Phase 8 without explicit owner approval.
+Phase 7 stopped at the internal traceability foundation and was approved as the baseline for Phase 8.
+
+## Phase 8 — authentication, OTP verification and operations dashboard
+
+**Implementation in progress.** Customer/staff session authentication, email-only OTP activation and recovery, Gmail SMTP integration using a Google App Password, and a permission-aware React operations console have been added. Mobile verification and SMS recovery are deferred; the existing Django user model is preserved and the account migration is additive.
+
+Do not treat registration or recovery delivery as production-ready until Gmail SMTP settings and an App Password are configured and a test OTP is received in an owner-approved inbox. Gmail SMTP is a low-volume, best-effort option, not a transactional email guarantee. No SMS provider or paid plan may be enabled. Finish backend and browser/responsive QA, inspect secret/diff state, and re-verify permission and CSRF behavior before any Phase 8 completion claim. Do not start Phase 9 without explicit owner approval.
 
 ## Deferred / only if justified
 
