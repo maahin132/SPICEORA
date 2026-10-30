@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 import SiteFooter from './components/SiteFooter.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import HomePage from './pages/HomePage.jsx'
+import EnquiryPage from './pages/EnquiryPage.jsx'
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
 
@@ -14,6 +15,7 @@ function App() {
       <SiteHeader />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/enquiry/" element={<EnquiryPage />} />
         <Route path="/products/" element={<ProductsPage />} />
         <Route path="/products/:slug/" element={<ProductDetailPage />} />
         <Route

@@ -2,11 +2,13 @@
 
 ## Scope and implementation status
 
-This document defines current controls and requirements for later business functionality. It is not a security certification. The current code has environment-based Django settings, explicit development CORS configuration, Django's standard middleware, a public health endpoint, and read-only public product/category endpoints. It does **not** implement enquiry submission, production deployment controls, or a verified security review.
+This document defines current controls and remaining launch requirements. It is not a security certification. The current code has environment-based Django settings, explicit development CORS configuration, Django's standard middleware, a public health endpoint, read-only catalogue endpoints, and a public enquiry-create endpoint. Production deployment controls and a verified security review are not implemented.
 
-The anonymous catalogue API returns only products marked published and belonging to active categories. Product detail returns 404 for missing, unpublished, or inactive-category products. Admin is the only catalogue write surface and uses Django's authenticated, CSRF-protected session admin. The homepage's enquiry section remains a non-submitting placeholder and does not collect personal information.
+The anonymous catalogue API returns only products marked published and belonging to active categories. The category list exposes active owner-provided labels for selection, without asserting availability. Product detail returns 404 for missing, unpublished, or inactive-category products. Admin is the only catalogue write surface and uses Django's authenticated, CSRF-protected session admin.
 
 Product image uploads are limited by the model validator to 5 MiB and JPG/JPEG/PNG/WebP extensions; Django's image form validation verifies image content. Alternative text is required when an image is supplied. Development uploads are served by Django only in DEBUG mode. Production media hosting, malware/content scanning, and CDN policy are not implemented and must be designed before production uploads are enabled.
+
+The public enquiry endpoint stores submitted contact/business data and returns a generic receipt reference. Server-side validation enforces required fields, bounds, category/product visibility, and quantity-unit pairing. The public response does not return enquiry details, status, or internal notes. No email or other notification provider is configured.
 
 ## Secrets and configuration
 
@@ -15,12 +17,13 @@ Product image uploads are limited by the model validator to 5 MiB and JPG/JPEG/P
 - Rotate credentials through an approved process; use least-privilege database identities and a separate migration identity where appropriate.
 - Ensure CI, application logs, error responses, screenshots, and support tickets do not contain secret values.
 
-## Future public enquiry endpoint — requirements (not implemented)
+## Public enquiry endpoint and abuse protection
 
-The proposed anonymous enquiry submission endpoint is an abuse and PII boundary:
+The anonymous submission endpoint is an abuse and PII boundary:
 
 - Validate type, length, format, active product references, and any required privacy acknowledgement on the server.
-- Use a configurable rate limit at the edge/WAF or reverse proxy and a compatible application-level limit. DRF's simple throttles alone are not a security-grade distributed limiter. Tune limits against real traffic and false-positive risk; do not claim a threshold exists until implemented and tested.
+- Implemented: five submissions per hour per request IP using a Django REST Framework throttle. It uses the default local-memory cache, which is not shared across app workers/hosts and is not a security-grade distributed limiter. A production shared cache, trusted-proxy/IP review, and edge/WAF control are required before launch.
+- The throttle uses a temporary IP-derived cache key; raw IP addresses are not stored with enquiry records. Correct client-IP identification behind production proxies must be configured and reviewed.
 - Consider a honeypot and request-size limits. Introduce a CAPTCHA only if abuse demonstrates need and the owner approves the privacy/accessibility tradeoff.
 - Make failure messages generic and avoid exposing whether a specific email or business is already known.
 - Do not accept file attachments in the initial scope.
@@ -29,14 +32,14 @@ The proposed anonymous enquiry submission endpoint is an abuse and PII boundary:
 
 ## Personal information and privacy
 
-Collect only the contact and business information needed to respond to a buyer. Publish a privacy notice before accepting submissions, define data controller/contact details, purposes, lawful basis, retention and deletion process, international transfer/hosting region, and data-subject request handling after jurisdiction is confirmed. Record a notice version/acknowledgement if legally required; do not conflate this with marketing consent. Owner/legal review is required before launch.
+Collect only the contact and business information needed to respond to a buyer. The form warns users not to submit sensitive personal/payment details, but no privacy notice or consent acknowledgement is implemented. Before public launch, define and publish data controller/contact details, purposes, lawful basis, retention/deletion process, international transfer/hosting region, and data-subject request handling after jurisdiction is confirmed. Record a notice version/acknowledgement if legally required; do not conflate this with marketing consent. Owner/legal review is required before launch.
 
 ## CORS, CSRF and session boundaries
 
 - Prefer same-origin serving for the public website and API.
 - If cross-origin requests are required, allow only exact HTTPS frontend origins and avoid permissive wildcard origins with credentials.
 - Keep Django CSRF middleware enabled. Preserve CSRF protection for staff session/admin operations.
-- Keep anonymous public API submissions cookie-less and unauthenticated unless a reviewed design says otherwise. Do not add CSRF exemptions or cross-site cookies as shortcuts.
+- The frontend's public JSON submission omits browser credentials/cookies. Admin remains session-authenticated and CSRF-protected. Do not add CSRF exemptions or cross-site cookies as shortcuts.
 - Configure trusted origins, secure session/CSRF cookies, HSTS and proxy headers only for the actual reviewed deployment.
 
 ## Staff/admin access
@@ -61,4 +64,4 @@ Collect only the contact and business information needed to respond to a buyer. 
 - Verify backup encryption/restore and enquiry retention/deletion.
 - Record operational incident, credential rotation and vulnerability reporting contacts.
 
-All implementation and deployment controls above remain proposals until code/configuration and a real deployed environment demonstrate them.
+Production controls above remain proposals until code/configuration and a real deployed environment demonstrate them.

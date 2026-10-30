@@ -4,7 +4,7 @@ SPICEORA is planned as a premium, customer-facing Indian spice-export business w
 
 **Working tagline:** “From Indian Origins to Global Markets.”
 
-The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, and the Phase 3 database-backed product catalogue/read API. The catalogue has no product records yet; only category labels are present. Enquiry handling remains a clearly marked placeholder and does not accept or send enquiries.
+The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, the Phase 3 database-backed product catalogue/read API, and the Phase 4 export enquiry workflow. The catalogue currently has six category labels and no product records. Enquiries are stored for staff review; no email notification is configured.
 
 ## Current stack
 
@@ -50,4 +50,4 @@ Decisions required from the owner are labelled **Owner confirmation required**. 
 
 ## Current homepage
 
-The homepage's product preview is API-driven and keeps the rest of the homepage available when the catalogue API is unavailable. Product detail pages only show admin-published records. The enquiry section remains a non-submitting placeholder; there is no contact channel, enquiry form, or submission endpoint yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified scope and checks.
+The homepage's product preview is API-driven and keeps the rest of the homepage available when the catalogue API is unavailable. Product detail pages only show admin-published records and link to a product-prefilled enquiry form. Submitted enquiries are available to authorized staff through Django admin. No company contact details are invented, no email provider is configured, and the production privacy/retention and distributed rate-limit controls still require owner review. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified scope and checks.

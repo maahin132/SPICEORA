@@ -11,7 +11,7 @@ python manage.py migrate --check
 python manage.py test --settings=config.test_settings
 ```
 
-The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing, category filtering, invalid parameters, detail lookup, unpublished/inactive visibility, response field exposure, admin registration, and image alternative-text validation. Enquiry behavior remains unimplemented.
+The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing/filtering, enquiry submission/validation, quantity rules, product/category visibility, response field exposure, rate limiting, admin status and note management, and image alternative-text validation.
 
 From `frontend/`:
 
@@ -20,7 +20,7 @@ npm run lint
 npm run build
 ```
 
-There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page and catalogue routes at desktop and mobile widths, product list/filter/detail navigation, loading/empty/error/not-found states, image loading/fallback, mobile menu open/close, Escape handling and focus restoration, and that the enquiry placeholder does not claim to submit.
+There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page, catalogue, enquiry form, and product-specific enquiry preselection at desktop and mobile widths; form validation, pending/success/error states; product list/filter/detail navigation; loading/empty/error/not-found states; image fallback; and mobile menu keyboard behavior.
 
 ## Proposed tests before public launch
 
@@ -45,4 +45,4 @@ There is no frontend component/interaction test runner configured. Browser smoke
 
 Run dependency/security scanners and static checks, review secrets/artifacts, test production configuration with `DEBUG=false`, and verify HTTPS, cookies, headers, CORS/CSRF, rate limits, logs, retention and restores in the deployed environment. No planned feature should be described as tested until its tests exist and pass.
 
-The product catalogue and public read APIs are implemented. Enquiry submission remains unimplemented; its tests belong to a later approved phase.
+The product catalogue, public read APIs, and enquiry submission are implemented. Before launch, add frontend automated interaction tests and execute production deployment/security checks, including rate-limit behavior with the configured shared cache and edge controls.

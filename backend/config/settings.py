@@ -100,3 +100,9 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_RATES": {
+        "public_enquiry": "5/hour",
+    },
+}

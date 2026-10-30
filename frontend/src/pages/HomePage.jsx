@@ -118,10 +118,10 @@ function HomePage() {
             the heart of its export focus.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#enquiry">
+            <Link className="button button-primary" to="/enquiry/">
               Discuss an export enquiry
               <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
-            </a>
+            </Link>
             <Link className="button button-text" to="/products/">
               Explore published products
               <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
@@ -190,10 +190,10 @@ function HomePage() {
               The story, sourcing details and product information will be
               shared here as they are confirmed by the company—never assumed.
             </p>
-            <a className="text-link" href="#enquiry">
+            <Link className="text-link" to="/enquiry/">
               Start a conversation
               <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
-            </a>
+            </Link>
           </div>
         </div>
         <p aria-hidden="true" className="about-index">
@@ -245,12 +245,13 @@ function HomePage() {
             <em>Let’s begin there.</em>
           </h2>
           <p className="enquiry-copy">
-            Contact details are awaiting owner confirmation. This preview does
-            not accept or send enquiries.
+            Share the products or categories you are interested in. No response
+            time or commercial terms are promised.
           </p>
-          <span className="contact-placeholder">
-            Enquiry channel to be confirmed
-          </span>
+          <Link className="button button-primary" to="/enquiry/">
+            Open the enquiry form
+            <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
+          </Link>
         </div>
         <span aria-hidden="true" className="enquiry-side-note">
           SPICEORA

@@ -946,6 +946,210 @@ a:focus-visible {
   margin-top: 2rem;
 }
 
+.product-enquiry-cta {
+  margin: 0.5rem 0 1.5rem;
+}
+
+.enquiry-page {
+  max-width: 62rem;
+}
+
+.enquiry-intro {
+  max-width: 47rem;
+  padding-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.enquiry-intro h1,
+.enquiry-success h2 {
+  margin: 0.8rem 0 1rem;
+  color: var(--color-forest);
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+
+.enquiry-intro > p:not(.eyebrow),
+.enquiry-success > p:not(.eyebrow) {
+  max-width: 40rem;
+  margin: 0 0 1.5rem;
+  color: #4e554e;
+  line-height: 1.75;
+}
+
+.enquiry-intro .text-link,
+.enquiry-success .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.enquiry-form {
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.enquiry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 1.25rem;
+}
+
+.enquiry-field {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.enquiry-field label {
+  color: var(--color-forest);
+  font-size: 0.79rem;
+  font-weight: 650;
+}
+
+.enquiry-field label span {
+  color: #62665d;
+  font-size: 0.68rem;
+  font-weight: 400;
+}
+
+.enquiry-field input,
+.enquiry-field select,
+.enquiry-field textarea {
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(32, 59, 48, 0.42);
+  border-radius: 0;
+  color: var(--color-forest);
+  background: var(--color-ivory);
+  font: inherit;
+}
+
+.enquiry-field textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.enquiry-field input:focus-visible,
+.enquiry-field select:focus-visible,
+.enquiry-field textarea:focus-visible,
+.enquiry-submit:focus-visible,
+.enquiry-product-selection button:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.enquiry-field [aria-invalid='true'] {
+  border-color: #9a3728;
+}
+
+.enquiry-field--message {
+  grid-column: 1 / -1;
+}
+
+.enquiry-field-error,
+.enquiry-form-error {
+  color: #7b3022;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.enquiry-form-error {
+  margin: 0 0 1.5rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid #9a3728;
+  background: rgba(154, 55, 40, 0.07);
+}
+
+.enquiry-form-notice {
+  margin: 0 0 1.5rem;
+  color: #7b3022;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.enquiry-product-selection {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1.75rem;
+  padding: 1rem;
+  border-left: 2px solid var(--color-gold);
+  background: rgba(196, 154, 85, 0.1);
+}
+
+.enquiry-product-selection strong {
+  color: var(--color-forest);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.enquiry-product-selection > span:not(.eyebrow) {
+  color: #4e554e;
+  font-size: 0.8rem;
+}
+
+.enquiry-product-selection button {
+  justify-self: start;
+  margin-top: 0.3rem;
+  padding: 0;
+  border: 0;
+  color: var(--color-forest);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.enquiry-privacy-note {
+  max-width: 46rem;
+  margin: 1.5rem 0;
+  color: #62665d;
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+
+.enquiry-submit {
+  min-width: 13rem;
+}
+
+.enquiry-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.enquiry-success {
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.enquiry-success h2 {
+  max-width: 42rem;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+}
+
+.enquiry-reference {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1.5rem 0;
+  color: #62665d;
+  font-size: 0.75rem;
+}
+
+.enquiry-reference span {
+  color: var(--color-forest);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
 .not-found-page {
   display: flex;
   min-height: 55vh;
@@ -1163,6 +1367,14 @@ a:focus-visible {
 
   .process-list {
     grid-template-columns: 1fr;
+  }
+
+  .enquiry-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .enquiry-field--message {
+    grid-column: auto;
   }
 
   .process-step,

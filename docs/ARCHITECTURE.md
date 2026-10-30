@@ -6,25 +6,34 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public read-only catalogue API, and React catalogue/detail routes. Enquiry handling remains a non-submitting placeholder; no enquiry API or schema exists.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. No notification provider or multi-item quote workflow is configured.
 
-The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` and `useCatalogRequest.js` for public reads/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
+The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `EnquiryPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` for API calls and `useCatalogRequest.js` for read/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
 ## Existing foundation
 
 - `frontend/`: React JavaScript/JSX SPA built with Vite. Tailwind CSS is available for styling, React Router for route composition, and Lucide React for interface icons.
 - `backend/`: Django + Django REST Framework project. Django loads local settings from root `.env`.
 - MySQL: local development database configured through environment variables.
-- Development data flow: Vite proxies `/api` and `/media` requests to Django. `/api/v1/categories/` and `/api/v1/products/` expose only categories with published products and published products in active categories. Product detail uses `/api/v1/products/{slug}/`.
+- Development data flow: Vite proxies `/api` and `/media` requests to Django. `/api/v1/categories/` exposes active category labels; product reads expose only published products in active categories. Product detail uses `/api/v1/products/{slug}/`.
 - Product images are optional Django `ImageField` uploads; development media is served by Django only when `DEBUG` is enabled. Production media storage/CDN configuration remains future deployment work.
 
 ### Phase 3 implementation boundaries
 
-- Product categories and products are managed only through authenticated Django admin; public APIs are read-only and `AllowAny`.
+- Product categories and products are managed only through authenticated Django admin; catalogue APIs are read-only and `AllowAny`.
 - Products default to unpublished. Responses do not include internal IDs, publication flags, sort ordering, or timestamps.
 - The product list is page-number paginated (12 per page), optionally filtered by an active category slug. Unknown query parameters and invalid filters return structured 400 errors; unpublished/inactive detail slugs return 404.
 - No products are preloaded. Category label rows come from the owner brief and do not claim inventory or availability.
 - The frontend uses `VITE_API_BASE_URL` when set, otherwise `/api/v1`. Vite proxies `/api` and `/media` in development. No credential is exposed in Vite configuration.
+
+### Phase 4 enquiry implementation boundaries
+
+- `/enquiry/` sends JSON to `POST /api/v1/enquiries/` without browser credentials. Product detail passes a published product and category in the URL; category-only enquiries remain available for all active categories.
+- The server validates names, email, country, interest, quantity/unit pairing and bounds, rejects unknown input keys, writes one enquiry record, and returns an opaque receipt reference. The public API has no read operation and never serializes internal notes or status.
+- The database enforces a positive quantity/allowed-unit constraint and protects enquiry categories from deletion; optional product links are set null on product deletion while preserving a name snapshot.
+- Django admin is the only enquiry read/update surface. Staff can search, filter by status/date/category, update status, and maintain internal notes.
+- Django REST Framework applies five requests per hour per client IP using its configured cache. The default development cache is local-memory and not a production distributed abuse-control system.
+- Email notification, multi-product line items, privacy notice/jurisdiction, retention/deletion policy, production shared-cache and edge rate limits remain unconfigured or require owner review.
 
 ## Proposed production architecture
 
@@ -54,7 +63,7 @@ Buyer browser
 ### Backend component boundaries — proposal
 
 - **Catalog read API:** serializers expose only active, publishable categories and products.
-- **Enquiry API:** one public create operation for contact, export enquiries, and quotation requests; validate and persist the enquiry plus optional selected products in a transaction.
+- **Enquiry API:** one public create operation for a category or a single product interest; validation is server-side and one enquiry row is persisted atomically.
 - **Admin:** Django admin for staff to maintain catalog records and triage enquiries. No public admin API or buyer accounts in launch scope.
 - **Domain validation:** enforce field lengths, allowed enquiry type, product eligibility, and consistency on the server even when client-side validation exists.
 - **Operational boundary:** email notifications, file uploads, CRM sync, and analytics are not assumed. Add them only after a real owner workflow and retention/security design are approved.
@@ -63,7 +72,7 @@ Buyer browser
 
 1. The page requests public catalogue data over same-origin `/api/v1/`.
 2. The API returns only records marked active/published; empty catalogues have a clear editorial state rather than invented products.
-3. The browser sends an enquiry with an explicit intent and optional product selections.
+3. The browser sends one enquiry for an active category or a published product, with required estimated quantity/unit and optional company, phone, and message context.
 4. The server validates, rate-limits, persists atomically, and returns a non-sensitive reference/confirmation.
 5. The UI shows field-level validation errors for correctable input; network/server failures receive a generic retry message and a correlation identifier when available. Never display stack traces, SQL, or internal exception text.
 

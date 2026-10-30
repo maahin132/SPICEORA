@@ -1,3 +1,4 @@
+import { ArrowUpRight } from 'lucide-react'
 import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
@@ -60,6 +61,13 @@ function ProductDetailPage() {
           <h1>{product.name}</h1>
           <p className="product-detail-summary">{product.summary}</p>
           <div className="product-description">{product.description}</div>
+          <Link
+            className="button button-primary product-enquiry-cta"
+            to={`/enquiry/?product=${encodeURIComponent(product.slug)}&category=${encodeURIComponent(product.category.slug)}`}
+          >
+            Enquire about this product
+            <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
+          </Link>
           <Link
             className="text-link"
             to={`/products/?category=${encodeURIComponent(product.category.slug)}`}

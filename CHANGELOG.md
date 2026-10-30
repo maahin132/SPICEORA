@@ -36,3 +36,10 @@ All notable project changes are recorded here.
 - Added React catalogue/detail routes, API-driven homepage preview, and loading/empty/error/not-found states.
 - Added Pillow for Django product-image validation. Production media hosting and enquiry submission remain unimplemented.
 - Verification results, database target, test isolation, and remaining limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+## [Phase 4] - Export enquiry system
+
+- Added the export enquiry model, validated public create endpoint, opaque receipt reference, IP-based submission throttle, and Django admin enquiry triage.
+- Added the responsive enquiry form, loading/validation/pending/success/error states, and product-specific enquiry preselection.
+- No email provider, privacy notice, retention policy, shared production rate-limit cache, or multi-product quote workflow is configured.
+- Verification results and launch limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).

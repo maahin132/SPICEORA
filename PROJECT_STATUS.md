@@ -10,18 +10,22 @@
 
 **Phase 3 — product catalogue and read API:** Implemented. The database contains six owner-provided category labels and zero product records. Public API and frontend catalogue routes are functional; no enquiry submission, quotation workflow, authentication feature, or payment behavior was added.
 
+**Phase 4 — export enquiry system:** Implemented and locally verified. Category/product enquiries are stored for staff review; no email notification provider or multi-product quote workflow is configured. Production privacy/retention and distributed anti-abuse controls still require owner review.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is reachable; the verified `main` branch contains the bootstrap commit and documentation updates.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 4 push verification is included in the completion report.
 - Latest credential re-verification: 2026-10-28. The `.env` password was read only in process and was never displayed.
 
 ### Implemented
 
 - React + Vite + Tailwind CSS 4 + React Router + Lucide React homepage, product catalogue, and product detail routes.
-- Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, `/api/health/`, and read-only `/api/v1/` catalogue endpoints.
+- Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, `/api/health/`, read-only catalogue endpoints, and public enquiry creation.
 - Phase 3 `ProductCategory` and `Product` models, Django admin maintenance, published-only API serializers, and optional product image uploads.
+- Phase 4 `ExportEnquiry` persistence, field/product/category validation, quantity constraints, five-per-hour IP-based request throttling, opaque submission reference, and Django admin status/notes workflow.
+- React `/enquiry/` form with accessible labels, client/server validation, duplicate-submit prevention, pending/success/error states, and product-specific preselection from detail pages.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
 - Local Git `main` branch initialized with the supplied GitHub URL as `origin`.
@@ -109,6 +113,37 @@
 | Frontend automated component tests | Not configured; browser smoke checks used instead |
 | Secret check and `.env` | Passed; `.env` remains ignored/untracked and values were not printed |
 
+### Phase 4 implementation
+
+- Added one `ExportEnquiry` record for a category or a single published product; product category is derived server-side and product name is snapshotted. Multi-item quotations are not supported.
+- Required fields are full name, syntactically valid email, country, exactly one active category or published product, positive estimated quantity, and quantity unit. Company, phone and message are optional. Quantity must have up to three decimals. Supported units are kilograms and metric tonnes.
+- Public API accepts JSON only, rejects unknown keys, stores records in MySQL, and returns only a generic confirmation and opaque UUID reference. There is no enquiry read endpoint and no email notification.
+- Added Django admin search by name/email/company/country; status/date/category filters; and editable workflow status/internal notes. These values are not in public responses.
+- Added responsive form and product-specific enquiry links that preselect the published product/category. The homepage, header and footer now route to the working form without inventing contact details.
+- Added a five-requests-per-hour IP-based DRF throttle. The default local-memory cache is not shared across workers/hosts; production needs a shared cache, trusted-proxy review and edge controls.
+- Privacy notice/consent, jurisdiction and retention/deletion policy, production email delivery and staff response operations remain owner-confirmation requirements.
+
+### Phase 4 verification
+
+| Check | Result |
+|---|---|
+| Migration source and SQL review | Passed; migration creates only `api_exportenquiry`, a positive quantity/unit check constraint, and FKs to the existing category/product tables; no destructive SQL |
+| Database target before migration | Verified without exposing credentials: `spiceora_db` at `localhost`, MySQL 8.0.46; target table did not exist |
+| `python manage.py migrate api 0002 --noinput` | Passed; applied only `api.0002_exportenquiry` |
+| Post-migration database inspection | Passed; table collation `utf8mb4_0900_ai_ci` and constraint present; six categories, zero products, and one enquiry row at final inspection. The enquiry row was preserved because its provenance could not be verified |
+| `python manage.py check` / `check --database default` | Passed |
+| `python manage.py migrate --check` / `makemigrations --check --dry-run` | Passed; no pending migration or model drift |
+| `python manage.py test --settings=config.test_settings` | Passed; 23 tests on isolated in-memory SQLite, including submission validation, visibility, internal-field protection, model constraints, admin status/notes, and throttling |
+| Frontend `npm run lint` | Passed without warnings |
+| Frontend `npm run build` | Passed |
+| Live dev endpoints | Passed; `/enquiry/` and `/api/v1/categories/` returned HTTP 200 |
+| Browser product-specific enquiry | Passed; product detail CTA opens `/enquiry/` with the product and category selected; mocked product read used, and product selection can be removed |
+| Browser form success/error states | Passed with mocked HTTP responses; payload shape checked, required input labels/attributes and field-level error display checked. An initial mock attempt reached the local API and its identified test record was removed; a later final database inspection found one row whose provenance could not be verified, so it was preserved |
+| Browser responsive check | Passed with no horizontal overflow at 320, 390, 768, 1024, and 1440 requested CSS-pixel widths |
+| Live API sanity | Passed; active category list returned HTTP 200, empty JSON submission returned 400, and enquiry GET returned 405. One enquiry row was present at final inspection and was left untouched because its provenance could not be verified |
+| Markdown links, staged diff, secret scan | Passed; 37 local links checked, staged diff reviewed, whitespace check passed, and secret-pattern scan found no matches |
+| `.env` | Remains ignored and untracked; credentials were not printed or edited |
+
 ### Verification results
 
 | Check | Result |
@@ -148,4 +183,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phase 2 and the Phase 3 product catalogue/read API are implemented. Contact details and publishable product content remain owner-confirmation items. The enquiry workflow is not implemented. Stop here and wait for explicit owner approval before Phase 4.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–4 are implemented. Contact details, publishable product content, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 5.

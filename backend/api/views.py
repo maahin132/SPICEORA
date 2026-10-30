@@ -1,12 +1,18 @@
+from decimal import Decimal
+
+from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
-from .models import Product, ProductCategory
+from .models import ExportEnquiry, Product, ProductCategory
 
 
 def health(request):
@@ -75,10 +81,7 @@ class ProductCategoryListView(PublicCatalogView):
         invalid = self.invalid_parameters(request, set())
         if invalid:
             return invalid
-        categories = ProductCategory.objects.filter(
-            is_active=True,
-            products__is_published=True,
-        ).distinct()
+        categories = ProductCategory.objects.filter(is_active=True)
         return Response(ProductCategorySerializer(categories, many=True).data)
 
 
@@ -148,3 +151,124 @@ class ProductDetailView(PublicCatalogView):
             context={"request": request},
         )
         return Response(serializer.data)
+
+
+class PublicEnquiryRateThrottle(SimpleRateThrottle):
+    scope = "public_enquiry"
+
+    def get_rate(self):
+        try:
+            return api_settings.DEFAULT_THROTTLE_RATES[self.scope]
+        except KeyError as error:
+            raise ImproperlyConfigured(
+                f"Rate for scope {self.scope!r} is not configured."
+            ) from error
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ExportEnquiryCreateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=120)
+    company_name = serializers.CharField(
+        max_length=160,
+        required=False,
+        allow_blank=True,
+    )
+    email = serializers.EmailField(max_length=254)
+    phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
+    country = serializers.CharField(max_length=100)
+    category_slug = serializers.SlugField(max_length=100, required=False)
+    product_slug = serializers.SlugField(max_length=150, required=False)
+    quantity = serializers.DecimalField(
+        max_digits=16,
+        decimal_places=3,
+        min_value=Decimal("0.001"),
+    )
+    quantity_unit = serializers.ChoiceField(
+        choices=ExportEnquiry.QuantityUnit.choices,
+    )
+    message = serializers.CharField(
+        max_length=5000,
+        required=False,
+        allow_blank=True,
+    )
+
+    def validate(self, attrs):
+        product_slug = attrs.pop("product_slug", None)
+        category_slug = attrs.pop("category_slug", None)
+        if bool(product_slug) == bool(category_slug):
+            raise serializers.ValidationError(
+                {
+                    "category_slug": [
+                        "Select one active category or one published product."
+                    ]
+                }
+            )
+
+        product = None
+        if product_slug:
+            product = Product.objects.select_related("category").filter(
+                slug=product_slug,
+                is_published=True,
+                category__is_active=True,
+            ).first()
+            if product is None:
+                raise serializers.ValidationError(
+                    {"product_slug": ["Select a published product."]}
+                )
+            category = product.category
+        else:
+            category = ProductCategory.objects.filter(
+                slug=category_slug,
+                is_active=True,
+            ).first()
+            if category is None:
+                raise serializers.ValidationError(
+                    {"category_slug": ["Select an active category."]}
+                )
+
+        attrs["category"] = category
+        attrs["product"] = product
+        attrs["product_name_snapshot"] = product.name if product else ""
+        return attrs
+
+
+class ExportEnquiryCreateView(APIView):
+    permission_classes = (AllowAny,)
+    throttle_classes = (PublicEnquiryRateThrottle,)
+
+    def post(self, request):
+        if not isinstance(request.data, dict):
+            return Response(
+                {"errors": {"non_field_errors": ["Submit a JSON object."]}},
+                status=400,
+            )
+        serializer = ExportEnquiryCreateSerializer(data=request.data)
+        unknown_fields = set(request.data) - set(serializer.fields)
+        if unknown_fields:
+            return Response(
+                {
+                    "errors": {
+                        field: ["Unknown field."]
+                        for field in sorted(unknown_fields)
+                    }
+                },
+                status=400,
+            )
+        if not serializer.is_valid():
+            return Response({"errors": serializer.errors}, status=400)
+        enquiry = self._create_enquiry(serializer.validated_data)
+        return Response(
+            {
+                "reference": str(enquiry.public_reference),
+                "message": "Your enquiry has been received.",
+            },
+            status=201,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def _create_enquiry(validated_data):
+        return ExportEnquiry.objects.create(**validated_data)

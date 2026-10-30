@@ -58,7 +58,7 @@ function SiteHeader() {
 
         <Link
           className="header-cta"
-          to="/#enquiry"
+          to="/enquiry/"
           onClick={closeMenu}
         >
           Export enquiry
@@ -91,7 +91,7 @@ function SiteHeader() {
           className="mobile-navigation"
           onNavigate={closeMenu}
         />
-        <Link className="mobile-menu-cta" to="/#enquiry" onClick={closeMenu}>
+        <Link className="mobile-menu-cta" to="/enquiry/" onClick={closeMenu}>
           Start an export enquiry
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
         </Link>

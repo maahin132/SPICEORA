@@ -14,7 +14,7 @@ Before implementation approval, resolve the owner confirmations in [business req
 
 **Complete:** responsive homepage, shared accessible header/navigation/footer, visual tokens, local illustrative photography, image fallback and phase-appropriate documentation/browser checks.
 
-The category cards are illustrative, and the enquiry section is a non-submitting placeholder. Catalogue/detail pages, enquiry submission, business APIs and schema changes remain out of scope.
+The homepage foundation is complete. Its enquiry call to action now links to the Phase 4 working enquiry form.
 
 ## Phase 3 — product catalogue and read API
 
@@ -22,9 +22,11 @@ The category cards are illustrative, and the enquiry section is a non-submitting
 
 No product/demo records, product availability claims, or unverified product facts were added. Enquiry, quotation, contact submission, and payments are not part of this phase.
 
-## Phase 4 — enquiry planning and implementation (not started)
+## Phase 4 — export enquiry system
 
-Proceed only after owner/legal confirmation of contact fields, recipient workflow, privacy notice/jurisdiction, retention, multi-product behavior, and abuse-response operations. Then implement the approved data model, protected staff workflow, validated/rate-limited public submission endpoint, and accessible frontend submission states.
+**Implemented:** validated category/product enquiry submission; responsive form with product-specific preselection; receipt reference; server-side validation; IP rate limit; and Django admin status/notes workflow. No email provider, multi-product quotation flow, or public enquiry lookup exists.
+
+Before public production launch, obtain owner/legal approval for the privacy notice and retention/deletion policy; configure a shared production throttle cache and edge abuse controls; confirm staff who will handle submissions; and configure/test a notification provider only if the owner approves that workflow.
 
 ## Deferred / only if justified
 
