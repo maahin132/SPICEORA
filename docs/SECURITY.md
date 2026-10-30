@@ -6,7 +6,7 @@ This document defines current controls and remaining launch requirements. It is 
 
 The anonymous catalogue API returns only products marked published and belonging to active categories. The category list exposes active owner-provided labels for selection, without asserting availability. Product detail returns 404 for missing, unpublished, or inactive-category products. Admin is the only catalogue write surface and uses Django's authenticated, CSRF-protected session admin.
 
-Product image uploads are limited by the model validator to 5 MiB and JPG/JPEG/PNG/WebP extensions; Django's image form validation verifies image content. Alternative text is required when an image is supplied. Development uploads are served by Django only in DEBUG mode. Production media hosting, malware/content scanning, and CDN policy are not implemented and must be designed before production uploads are enabled.
+Product image uploads are available only through authenticated Django Admin. Server-side validation accepts matching JPG/JPEG, PNG, or WebP content and extensions; limits files to 5 MiB, 8,000 px per side, and 40 megapixels; and gives new uploads random UUID filenames under `products/`. Alternative text is required when an image is supplied. Old files are not automatically removed on image replacement/removal. Development uploads are served by Django only in DEBUG mode. Production media hosting, malware/content scanning, and CDN policy are not implemented and must be designed before production uploads are enabled. These checks do not replace production storage isolation, content scanning, or safe response headers.
 
 The public enquiry endpoint stores submitted contact/business data and returns a generic receipt reference. Server-side validation enforces required fields, bounds, category/product visibility, and quantity-unit pairing. The public response does not return enquiry details, status, or internal notes. No email or other notification provider is configured.
 
@@ -46,6 +46,7 @@ Collect only the contact and business information needed to respond to a buyer. 
 
 - Use individual named staff accounts, strong unique passwords and MFA where available through the chosen identity/control layer.
 - Grant staff only the model and action permissions they need; disable or protect unused admin accounts.
+- Product image content management is confined to the authenticated admin; model relationships use deletion protection so referenced categories/products cannot be silently removed.
 - Restrict admin access through HTTPS and, where feasible, VPN/IP allow-list or identity-aware access control.
 - Review access periodically; log sensitive record access/changes without copying enquiry text or credentials into logs.
 - Never expose Django admin through a custom public API.

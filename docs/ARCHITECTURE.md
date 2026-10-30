@@ -6,7 +6,7 @@
 - **Phase 1 proposal:** planned boundary or behavior; not implemented.
 - **Owner confirmation required:** business, legal, or operational input needed before launch.
 
-Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. No notification provider or multi-item quote workflow is configured.
+Phase 1 was documentation-only. Phase 2 implements a React homepage, shared header/footer and responsive design foundation. Phase 3 adds Django product/category models, staff admin management, a public catalogue API, and React catalogue/detail routes. Phase 4 adds public enquiry creation, an accessible React form with contextual product preselection, and staff enquiry triage in Django admin. Phase 5 improves product/category admin content workflows, protects enquiry-linked products from deletion, and validates product image uploads. No notification provider or multi-item quote workflow is configured.
 
 The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`, `EnquiryPage`, `ProductCard`, and `SiteFooter`, with `catalog.js` for API calls and `useCatalogRequest.js` for read/loading states. Shared design tokens and responsive states live in the Tailwind CSS v4 `@theme` block and semantic rules in `frontend/src/index.css`. The mobile navigation is a disclosure (not a modal): it exposes expanded state, closes on link selection or Escape, and returns focus to its toggle on Escape.
 
@@ -16,7 +16,7 @@ The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`,
 - `backend/`: Django + Django REST Framework project. Django loads local settings from root `.env`.
 - MySQL: local development database configured through environment variables.
 - Development data flow: Vite proxies `/api` and `/media` requests to Django. `/api/v1/categories/` exposes active category labels; product reads expose only published products in active categories. Product detail uses `/api/v1/products/{slug}/`.
-- Product images are optional Django `ImageField` uploads; development media is served by Django only when `DEBUG` is enabled. Production media storage/CDN configuration remains future deployment work.
+- Product images are optional Django `ImageField` uploads. Admin uploads are restricted to matching JPG/JPEG, PNG, and WebP images no larger than 5 MiB, 8,000 px per side, or 40 megapixels; new files receive random UUID names. Development media is served by Django only when `DEBUG` is enabled. Production media storage/CDN configuration remains future deployment work.
 
 ### Phase 3 implementation boundaries
 
@@ -34,6 +34,13 @@ The frontend uses `SiteHeader`, `HomePage`, `ProductsPage`, `ProductDetailPage`,
 - Django admin is the only enquiry read/update surface. Staff can search, filter by status/date/category, update status, and maintain internal notes.
 - Django REST Framework applies five requests per hour per client IP using its configured cache. The default development cache is local-memory and not a production distributed abuse-control system.
 - Email notification, multi-product line items, privacy notice/jurisdiction, retention/deletion policy, production shared-cache and edge rate limits remain unconfigured or require owner review.
+
+### Phase 5 product content workflow
+
+- Authorized staff use Django Admin to create, edit, search, filter, order, publish/unpublish and delete products and manage categories. Product lists include publication state, category, sort order, creation date and image preview.
+- Product and category references are protected from deletion when used by products/enquiries. Enquiry-linked products cannot be deleted; unreferenced products use the standard admin confirmation flow.
+- New image filenames are randomized; replacing/removing an image does not rewrite other stored image paths. Local development media uses `MEDIA_ROOT/products/`; production storage and delivery are not configured.
+- The public API contract is unchanged: only published products in active categories are returned, optional images use absolute URLs, and unpublished or deleted product slugs return 404. The frontend keeps the existing visual system and missing-image fallback.
 
 ## Proposed production architecture
 

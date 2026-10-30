@@ -11,7 +11,7 @@ python manage.py migrate --check
 python manage.py test --settings=config.test_settings
 ```
 
-The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing/filtering, enquiry submission/validation, quantity rules, product/category visibility, response field exposure, rate limiting, admin status and note management, and image alternative-text validation.
+The system and database checks use the local MySQL database configured by `.env`. The API tests use the in-memory SQLite test settings to keep test data isolated and avoid creating a separate MySQL test database; all test data is discarded. The suite covers public catalogue listing/filtering, enquiry submission/validation, quantity rules, product/category visibility, response field exposure, rate limiting, admin product creation/update/publication/deletion, protected product/category/enquiry relationships, image format/size/dimension validation, randomized image uploads and URLs, admin image previews, enquiry status/note management, and image alternative-text validation.
 
 From `frontend/`:
 
@@ -20,7 +20,7 @@ npm run lint
 npm run build
 ```
 
-There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page, catalogue, enquiry form, and product-specific enquiry preselection at desktop and mobile widths; form validation, pending/success/error states; product list/filter/detail navigation; loading/empty/error/not-found states; image fallback; and mobile menu keyboard behavior.
+There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page, catalogue, enquiry form, and product-specific enquiry preselection at desktop and mobile widths; form validation, pending/success/error states; product list/filter/detail navigation; loading/empty/error/not-found states; image fallback; and mobile menu keyboard behavior. Product images are already rendered from API URLs in cards/details; missing or failed images use the shared SPICEORA placeholder.
 
 ## Proposed tests before public launch
 

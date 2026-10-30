@@ -4,7 +4,7 @@ SPICEORA is planned as a premium, customer-facing Indian spice-export business w
 
 **Working tagline:** “From Indian Origins to Global Markets.”
 
-The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, the Phase 3 database-backed product catalogue/read API, and the Phase 4 export enquiry workflow. The catalogue currently has six category labels and no product records. Enquiries are stored for staff review; no email notification is configured.
+The current repository contains the Phase 0 technical foundation, Phase 1 planning documents, the Phase 2 responsive homepage, the Phase 3 database-backed product catalogue/read API, the Phase 4 export enquiry workflow, and the Phase 5 Django Admin product content workflow. The local catalogue currently has six category labels and no product records. Enquiries are stored for staff review; no email notification is configured.
 
 ## Current stack
 
@@ -33,7 +33,7 @@ In another terminal, start the frontend from `frontend/`:
 npm run dev
 ```
 
-The initial catalogue has no product records. Add only owner-approved content and images through the authenticated Django admin before publishing products.
+The initial catalogue has no product records. Add only owner-approved content and images through the authenticated Django admin before publishing products. Product images are stored locally under `backend/media/products/` during development with randomized filenames and upload validation; production object storage/CDN and media delivery are not configured.
 
 ## Product and design documents
 

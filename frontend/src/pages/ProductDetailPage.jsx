@@ -54,6 +54,7 @@ function ProductDetailPage() {
         <ProductImage
           alt={product.image_alt}
           className="product-detail-image"
+          loading="eager"
           src={product.image}
         />
         <div className="product-detail-copy">

@@ -1,14 +1,70 @@
+import warnings
 import uuid
+from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models import Q
+from PIL import Image, UnidentifiedImageError
+
+
+PRODUCT_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+PRODUCT_IMAGE_MAX_SIZE = 5 * 1024 * 1024
+PRODUCT_IMAGE_MAX_DIMENSION = 8000
+PRODUCT_IMAGE_MAX_PIXELS = 40_000_000
+
+
+def product_image_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    if extension.lstrip(".") not in PRODUCT_IMAGE_EXTENSIONS:
+        raise ValidationError("Upload a JPG, PNG, or WebP product image.")
+    return f"products/{uuid.uuid4().hex}{extension}"
 
 
 def validate_image_size(image):
-    if image.size > 5 * 1024 * 1024:
+    if image.size > PRODUCT_IMAGE_MAX_SIZE:
         raise ValidationError("Product images must be 5 MB or smaller.")
+
+
+def validate_product_image(image):
+    extension = Path(image.name).suffix.lower().lstrip(".")
+    try:
+        image.seek(0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(image) as uploaded_image:
+                width, height = uploaded_image.size
+                expected_format = {
+                    "jpg": "JPEG",
+                    "jpeg": "JPEG",
+                    "png": "PNG",
+                    "webp": "WEBP",
+                }.get(extension)
+                if expected_format is None or uploaded_image.format != expected_format:
+                    raise ValidationError(
+                        "The image content must match its JPG, PNG, or WebP extension."
+                    )
+                if (
+                    width > PRODUCT_IMAGE_MAX_DIMENSION
+                    or height > PRODUCT_IMAGE_MAX_DIMENSION
+                    or width * height > PRODUCT_IMAGE_MAX_PIXELS
+                ):
+                    raise ValidationError(
+                        "Product images must be no larger than 8000 px per side "
+                        "or 40 megapixels."
+                    )
+    except ValidationError:
+        raise
+    except (
+        Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
+        OSError,
+        UnidentifiedImageError,
+    ) as error:
+        raise ValidationError("Upload a valid JPG, PNG, or WebP image.") from error
+    finally:
+        image.seek(0)
 
 
 class ProductCategory(models.Model):
@@ -36,11 +92,12 @@ class Product(models.Model):
     summary = models.CharField(max_length=280)
     description = models.TextField()
     image = models.ImageField(
-        upload_to="products/",
+        upload_to=product_image_upload_to,
         blank=True,
         validators=[
-            FileExtensionValidator(allowed_extensions=("jpg", "jpeg", "png", "webp")),
+            FileExtensionValidator(allowed_extensions=PRODUCT_IMAGE_EXTENSIONS),
             validate_image_size,
+            validate_product_image,
         ],
     )
     image_alt = models.CharField(max_length=180, blank=True)
@@ -91,7 +148,7 @@ class ExportEnquiry(models.Model):
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="enquiries",
         null=True,
         blank=True,

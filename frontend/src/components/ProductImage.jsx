@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function ProductImage({ alt, className, src }) {
+function ProductImage({ alt, className, loading = 'lazy', src }) {
   const [failed, setFailed] = useState(false)
 
   return (
@@ -8,7 +8,9 @@ function ProductImage({ alt, className, src }) {
       {src && !failed ? (
         <img
           alt={alt}
-          loading="lazy"
+          decoding="async"
+          fetchPriority={loading === 'eager' ? 'high' : 'auto'}
+          loading={loading}
           onError={() => setFailed(true)}
           src={src}
         />

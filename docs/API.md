@@ -42,7 +42,9 @@ The page size is 12. `?page=<positive integer>` selects a page. Optional `?categ
 
 Returns the public product fields directly: `slug`, `name`, `category`, `summary`, `image`, `image_alt`, and `description`. Missing, unpublished, and products whose category is inactive all return `404` without revealing publication state. Image URLs are absolute URLs when a file is present; absent images return `null`.
 
-Responses omit database IDs, publication flags, sort order, timestamps, and admin-only fields.
+Responses omit database IDs, publication flags, sort order, timestamps, and admin-only fields. Product images are optional. When present, the API returns their absolute media URL and the admin-entered alt text; when missing, `image` is `null`. The public frontend falls back gracefully if an image URL cannot be loaded.
+
+Products and categories are managed through the authenticated Django Admin, not public write endpoints. Product image uploads accept validated JPEG/JPG, PNG, or WebP content; no public upload endpoint exists.
 
 ## `POST /api/v1/enquiries/`
 

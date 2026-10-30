@@ -12,11 +12,13 @@
 
 **Phase 4 — export enquiry system:** Implemented and locally verified. Category/product enquiries are stored for staff review; no email notification provider or multi-product quote workflow is configured. Production privacy/retention and distributed anti-abuse controls still require owner review.
 
+**Phase 5 — admin product management and content workflow:** Implemented and locally verified. Authorized Django staff can create, edit, publish, unpublish and delete products with image previews and validated uploads. Product and category deletion is protected when related enquiries/products exist. No product records were created.
+
 ### Environment
 
 - Windows, Python 3.12.10, Node.js 24.18.0, npm 11.16.0
 - MySQL 8.0.46 service is running locally and TCP port 3306 is reachable.
-- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 4 push verification is included in the completion report.
+- GitHub repository `https://github.com/maahin132/SPICEORA` is configured as `origin`; Phase 4 baseline was verified before this phase.
 - Latest credential re-verification: 2026-10-28. The `.env` password was read only in process and was never displayed.
 
 ### Implemented
@@ -25,6 +27,8 @@
 - Django 5.2 + Django REST Framework + PyMySQL configuration, environment loading, CORS configuration, `/api/health/`, read-only catalogue endpoints, and public enquiry creation.
 - Phase 3 `ProductCategory` and `Product` models, Django admin maintenance, published-only API serializers, and optional product image uploads.
 - Phase 4 `ExportEnquiry` persistence, field/product/category validation, quantity constraints, five-per-hour IP-based request throttling, opaque submission reference, and Django admin status/notes workflow.
+- Phase 5 Django admin product/category content workflow, protected related-record deletion, product image preview and validated UUID-named image uploads.
+- Product image uploads accept JPEG, PNG and WebP content up to 5 MiB and 8,000 px per side / 40 megapixels; existing image paths are retained. Local development media is supported; production image storage is not configured.
 - React `/enquiry/` form with accessible labels, client/server validation, duplicate-submit prevention, pending/success/error states, and product-specific preselection from detail pages.
 - Root `.env` contains local Django/database settings and is ignored by Git. Django now uses `DB_HOST=localhost`, matching the MySQL account whose password is in `.env`.
 - `.env.example`, setup guides, architecture/API/database/security/testing/deployment/roadmap docs, and GitHub issue/PR templates.
@@ -84,7 +88,7 @@
 
 - Added `ProductCategory` (unique name/slug, display order, active state) and `Product` (category FK, unique slug, approved name/summary/description, optional image/alt text, published state, display order, timestamps). Product publication defaults off.
 - Added six owner-provided category label records. No product/demo records, prices, specifications, inventory, origin claims, or certifications were created.
-- Added searchable/filterable Django admin category and product screens. Product image upload is optional, limited to 5 MiB and JPG/JPEG/PNG/WebP; image alternative text is required when a file is selected.
+- Added searchable/filterable Django admin category and product screens. Phase 3 initially limited product images to 5 MiB and JPG/JPEG/PNG/WebP; Phase 5 adds content/extension matching and dimension limits.
 - Added public `GET /api/v1/categories/`, paginated `GET /api/v1/products/` with validated `category` filtering, and `GET /api/v1/products/{slug}/`. Inactive categories and unpublished products are excluded.
 - Added React `/products/` and `/products/:slug/` routes, API-driven homepage preview, category filter, pagination, loading/empty/error/not-found states, and reusable product cards.
 - Development Vite proxy supports `/api` and `/media`. Production media storage is not configured.
@@ -144,6 +148,30 @@
 | Markdown links, staged diff, secret scan | Passed; 37 local links checked, staged diff reviewed, whitespace check passed, and secret-pattern scan found no matches |
 | `.env` | Remains ignored and untracked; credentials were not printed or edited |
 
+### Phase 5 implementation
+
+- Reused the existing product/category fields; no product content, specifications, certifications, prices, stock, availability claims, or sample products were added.
+- Improved Django Admin product list/search/filter/order fields, editable publication and display order, content/publication fieldsets, timestamps, and primary-image previews. Category management remains available in Django Admin.
+- Product images must have matching JPEG/JPG, PNG, or WebP content and extension, be at most 5 MiB, and be no larger than 8,000 px on either side or 40 megapixels. New filenames are random UUIDs under `MEDIA_ROOT/products/`; existing stored paths are unchanged. Admin previews distinguish no image from a missing stored file.
+- `ExportEnquiry.product` now uses `PROTECT`, preventing product deletion when an enquiry references it; category references were already protected. No Phase 4 enquiry was edited or deleted.
+- Public catalogue routes and response fields are unchanged. Existing product cards/detail pages continue to use uploaded image URLs with a browser-level graceful fallback; the product detail image loads eagerly.
+- Production media hosting, CDN, image scanning, backup/retention and delivery policy remain unconfigured.
+
+### Phase 5 verification
+
+| Check | Result |
+|---|---|
+| Pre-migration database inspection | Verified target `spiceora_db` / MySQL 8.0.46; six categories, zero products, one enquiry, and no enquiry linked to a product |
+| Migration source and SQL review | Passed; `api.0003_phase5_product_admin_safety` changes ORM deletion behavior and upload path/validators only; `sqlmigrate` reported no SQL operations |
+| Migration application/state | Passed; applied `api.0003_phase5_product_admin_safety`; no pending migration |
+| Post-migration database inspection | Passed; existing category/product/enquiry counts and enquiry-product link count unchanged; enquiry record was not read, altered, or deleted |
+| Django system and database checks | Passed |
+| Isolated Django tests | Passed; 34 tests cover admin product create/update/publish/unpublish/delete confirmation, category filtering, unpublished visibility, safe image upload/validation/preview/API URL, category/product/enquiry deletion protection, and Phase 4 behavior |
+| Frontend lint and production build | Passed |
+| Public API route checks | Passed; category and paginated product lists work, detail returns 404 for absent/unpublished products, and product image URLs remain public absolute URLs when present |
+| Browser responsive and route checks | Passed; live empty catalogue, category filter, and missing-product detail checked at 320, 390, 768, 1024, and 1440 px with no horizontal overflow. No approved products exist, so a real published-product image/detail rendering was unavailable; the existing shared image fallback is unchanged |
+| Markdown links, staged diff, secret scan | Passed; no secret patterns; `.env` remains ignored and untracked |
+
 ### Verification results
 
 | Check | Result |
@@ -183,4 +211,4 @@ No database, account, password, or grant was changed during this fix. `woodhub_d
 
 ## Phase 1 outcome
 
-Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–4 are implemented. Contact details, publishable product content, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 5.
+Phase 1 deliverables remain documented as decisions, proposals and open owner questions. Phases 2–5 are implemented. Contact details, publishable product content, privacy/retention policy, production abuse controls, notification setup, and staff response operations remain owner-confirmation items. Stop here and wait for explicit owner approval before Phase 6.

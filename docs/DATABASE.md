@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Implemented:** MySQL 8.0 and Django connection configuration are part of the Phase 0 foundation. Django's built-in auth/admin/session migrations are applied. Phase 3 migration `api.0001_initial` adds `api_productcategory` and `api_product` to `spiceora_db`; it seeds the six owner-provided category labels and creates no product rows. Phase 4 migration `api.0002_exportenquiry` was applied on 2026-10-30 and adds the single `api_exportenquiry` table. Final verification found six categories, zero products and one enquiry row. The enquiry row was preserved because its provenance could not be verified. No existing catalogue rows or unrelated databases were changed.
+**Implemented:** MySQL 8.0 and Django connection configuration are part of the Phase 0 foundation. Django's built-in auth/admin/session migrations are applied. Phase 3 migration `api.0001_initial` adds `api_productcategory` and `api_product` to `spiceora_db`; it seeds the six owner-provided category labels and creates no product rows. Phase 4 migration `api.0002_exportenquiry` was applied on 2026-10-30 and adds the single `api_exportenquiry` table. Phase 5 migration `api.0003_phase5_product_admin_safety` changes ORM deletion behavior and upload-field state only; reviewed generated SQL contained no database operations. Current verified counts are six categories, zero products, and one enquiry. The enquiry was preserved without reading or editing its content. No unrelated databases were accessed or changed.
 
 The configured development connection was verified as `spiceora_db` at `localhost`. The two catalogue tables use MySQL collation `utf8mb4_0900_ai_ci`. No WoodHub or unrelated database was accessed or changed.
 
@@ -24,7 +24,7 @@ Initial migration labels: Cumin, Fennel, Red chilli, Turmeric, Coriander, Dhana-
 - `category_id`: required FK to `ProductCategory`, protected from deletion while referenced
 - `slug`: unique stable URL identifier
 - `name`, `summary`, `description`: staff-entered, owner-approved public content
-- `image`: optional Django `ImageField` stored under `MEDIA_ROOT/products/`; admin validation accepts JPG/JPEG/PNG/WebP up to 5 MiB
+- `image`: optional Django `ImageField` stored under `MEDIA_ROOT/products/`; admin validation accepts matching JPG/JPEG/PNG/WebP content and extensions up to 5 MiB, 8,000 px per side, and 40 megapixels; new uploads use random UUID filenames
 - `image_alt`: required by model validation when an image is set
 - `is_published`: explicit public publication gate; defaults false
 - `sort_order`: editorial order
@@ -32,7 +32,7 @@ Initial migration labels: Cumin, Fennel, Red chilli, Turmeric, Coriander, Dhana-
 
 Only add origin, grade, variety, processing, packaging, certifications, lab results, or other attributes after the owner supplies evidence and confirms they should be public. No products or product claims were seeded.
 
-The Pillow dependency is used by Django's image validation. In development, Django serves uploads at `/media/`; Vite proxies that path to the backend. Production media hosting and delivery are not configured.
+The Pillow dependency is used by Django's image validation. Existing image paths are not rewritten by the Phase 5 migration, and old image files are not automatically deleted when a product image is replaced or cleared. In development, Django serves uploads at `/media/`; Vite proxies that path to the backend. Production media hosting, CDN, scanning and delivery are not configured.
 
 ### `ExportEnquiry`
 
@@ -43,7 +43,7 @@ The Pillow dependency is used by Django's image validation. In development, Djan
 - `full_name`, `email`, `country`: required contact fields
 - `company_name`, `phone`, `message`: optional bounded input
 - `category_id`: required protected FK to the selected active category
-- `product_id`: optional FK to a published product, set null if that product is removed
+- `product_id`: optional FK to a published product; product deletion is protected while an enquiry references it so the relationship is preserved
 - `product_name_snapshot`: product display name at submission, for historical context
 - `quantity`, `quantity_unit`: required by the public API; positive decimal estimate and one of `kg` or `metric_tonne`
 - `status`: `new`, `in_progress`, `responded`, or `closed`
@@ -64,7 +64,7 @@ ProductCategory 1 ─── * ExportEnquiry
 Product         0..1 ─── * ExportEnquiry
 ```
 
-Retire products by setting `is_published=false` or deactivating their category, not by routine deletion. Public catalogue endpoints exclude unpublished products and products in inactive categories. Django admin is the catalogue write surface; the only public write endpoint creates enquiries, with no public read or update operation.
+Retire products by setting `is_published=false` or deactivating their category, not by routine deletion. Product deletion is protected while enquiry records reference it; category deletion is protected while products or enquiries reference it. Public catalogue endpoints exclude unpublished products and products in inactive categories. Django admin is the catalogue write surface; the only public write endpoint creates enquiries, with no public read or update operation.
 
 ## Data integrity and operational controls
 

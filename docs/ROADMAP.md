@@ -28,6 +28,12 @@ No product/demo records, product availability claims, or unverified product fact
 
 Before public production launch, obtain owner/legal approval for the privacy notice and retention/deletion policy; configure a shared production throttle cache and edge abuse controls; confirm staff who will handle submissions; and configure/test a notification provider only if the owner approves that workflow.
 
+## Phase 5 — admin product management and content workflow
+
+**Complete:** Django Admin supports product/category content management, publishing, ordering, search/filter, image previews, validated randomized image uploads, and relationship-protected deletion. Existing public catalogue routes and layouts consume the same API fields; no product records or invented product claims were added.
+
+Before production, configure and verify media storage/delivery, backup and retention, CDN/security headers, and any desired image malware/content scanning. Populate the catalogue only with owner-approved product content.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

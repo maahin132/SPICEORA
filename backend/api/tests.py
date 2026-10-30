@@ -1,16 +1,37 @@
 from io import BytesIO
+from pathlib import Path
+import tempfile
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.deletion import ProtectedError
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 from rest_framework.test import APITestCase
 
-from .models import ExportEnquiry, Product, ProductCategory
+from .models import (
+    ExportEnquiry,
+    Product,
+    ProductCategory,
+    product_image_upload_to,
+)
+
+
+def uploaded_image(name="product.png", size=(2, 2), image_format="PNG"):
+    image_buffer = BytesIO()
+    Image.new("RGB", size, color=(32, 59, 48)).save(
+        image_buffer,
+        format=image_format,
+    )
+    return SimpleUploadedFile(
+        name,
+        image_buffer.getvalue(),
+        content_type=f"image/{image_format.lower()}",
+    )
 
 
 class HealthEndpointTests(SimpleTestCase):
@@ -150,25 +171,295 @@ class PublicCatalogApiTests(APITestCase):
         self.assertTrue(admin.site.is_registered(ProductCategory))
 
     def test_product_image_requires_alternative_text(self):
-        image_buffer = BytesIO()
-        Image.new("RGB", (2, 2)).save(image_buffer, format="PNG")
         product = Product(
             category=self.cumin,
             slug="image-alt-test",
             name="Image alt test",
             summary="Test summary.",
             description="Test description.",
-            image=SimpleUploadedFile(
-                "product.png",
-                image_buffer.getvalue(),
-                content_type="image/png",
-            ),
+            image=uploaded_image(),
         )
 
         with self.assertRaises(ValidationError) as error:
             product.full_clean()
 
         self.assertIn("image_alt", error.exception.message_dict)
+
+    def test_product_image_rejects_mismatched_format(self):
+        product = Product(
+            category=self.cumin,
+            slug="image-format-test",
+            name="Image format test",
+            summary="Test summary.",
+            description="Test description.",
+            image=uploaded_image(name="product.jpg"),
+            image_alt="A test product image.",
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            product.full_clean()
+
+        self.assertIn("image", error.exception.message_dict)
+
+    def test_product_image_rejects_executable_extension_and_non_image_content(self):
+        for name, content in (
+            ("payload.exe", uploaded_image().read()),
+            ("payload.png", b"MZ this is not an image"),
+        ):
+            with self.subTest(name=name):
+                product = Product(
+                    category=self.cumin,
+                    slug=f"unsafe-image-{name.split('.')[-1]}",
+                    name="Unsafe image test",
+                    summary="Test summary.",
+                    description="Test description.",
+                    image=SimpleUploadedFile(name, content),
+                    image_alt="A test product image.",
+                )
+                with self.assertRaises(ValidationError) as error:
+                    product.full_clean()
+                self.assertIn("image", error.exception.message_dict)
+
+    def test_product_image_accepts_supported_matching_formats(self):
+        for extension, image_format in (
+            ("jpg", "JPEG"),
+            ("jpeg", "JPEG"),
+            ("png", "PNG"),
+            ("webp", "WEBP"),
+        ):
+            with self.subTest(extension=extension):
+                product = Product(
+                    category=self.cumin,
+                    slug=f"image-format-{extension}",
+                    name="Image format test",
+                    summary="Test summary.",
+                    description="Test description.",
+                    image=uploaded_image(
+                        name=f"product.{extension}",
+                        image_format=image_format,
+                    ),
+                    image_alt="A test product image.",
+                )
+                product.full_clean()
+
+    def test_product_image_rejects_oversized_file(self):
+        product = Product(
+            category=self.cumin,
+            slug="image-size-test",
+            name="Image size test",
+            summary="Test summary.",
+            description="Test description.",
+            image=SimpleUploadedFile(
+                "large.png",
+                b"x" * (5 * 1024 * 1024 + 1),
+                content_type="image/png",
+            ),
+            image_alt="A test product image.",
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            product.full_clean()
+
+        self.assertIn("5 MB or smaller", str(error.exception))
+
+    def test_product_image_rejects_oversized_dimensions(self):
+        product = Product(
+            category=self.cumin,
+            slug="image-dimensions-test",
+            name="Image dimensions test",
+            summary="Test summary.",
+            description="Test description.",
+            image=uploaded_image(size=(8001, 1)),
+            image_alt="A test product image.",
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            product.full_clean()
+
+        self.assertIn("40 megapixels", str(error.exception))
+
+    def test_product_image_upload_uses_random_safe_filename_and_public_url(self):
+        product = Product(
+            category=self.cumin,
+            slug="image-upload-test",
+            name="Image upload test",
+            summary="Test summary.",
+            description="Test description.",
+            image=uploaded_image(name=r"..\unsafe\product PHOTO.PNG"),
+            image_alt="A test product image.",
+            is_published=True,
+        )
+        self.assertRegex(
+            product_image_upload_to(product, r"..\unsafe\product PHOTO.PNG"),
+            r"^products/[0-9a-f]{32}\.png$",
+        )
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                product.full_clean()
+                product.save()
+                self.assertRegex(
+                    product.image.name,
+                    r"^products/[0-9a-f]{32}\.png$",
+                )
+                self.assertTrue(Path(media_root, product.image.name).is_file())
+
+                response = self.client.get(
+                    reverse("product-detail", args=(product.slug,))
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["image"],
+            f"http://testserver/media/{product.image.name}",
+        )
+        self.assertEqual(response.data["image_alt"], "A test product image.")
+
+
+class ProductAdminWorkflowTests(APITestCase):
+    def setUp(self):
+        self.category = ProductCategory.objects.get(slug="cumin")
+        self.admin_user = get_user_model().objects.create_superuser(
+            username="product-admin",
+            email="product-admin@example.com",
+            password="test-only-password",
+        )
+        self.client.force_login(self.admin_user)
+
+    def product_form_data(self, **overrides):
+        data = {
+            "name": "Admin managed cumin",
+            "slug": "admin-managed-cumin",
+            "category": str(self.category.pk),
+            "summary": "Owner-approved short description.",
+            "description": "Owner-approved full description.",
+            "image_alt": "",
+            "is_published": "",
+            "sort_order": "0",
+            "_save": "Save",
+        }
+        data.update(overrides)
+        return data
+
+    def test_admin_can_create_product_as_unpublished_draft(self):
+        response = self.client.post(
+            reverse("admin:api_product_add"),
+            self.product_form_data(),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(slug="admin-managed-cumin")
+        self.assertFalse(product.is_published)
+        self.assertEqual(product.category, self.category)
+
+    def test_admin_can_update_product_content_and_publication_state(self):
+        product = Product.objects.create(
+            category=self.category,
+            slug="admin-managed-cumin",
+            name="Admin managed cumin",
+            summary="Old summary.",
+            description="Old description.",
+        )
+        change_url = reverse("admin:api_product_change", args=(product.pk,))
+
+        response = self.client.post(
+            change_url,
+            self.product_form_data(
+                summary="Updated summary.",
+                description="Updated description.",
+                is_published="on",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        product.refresh_from_db()
+        self.assertEqual(product.summary, "Updated summary.")
+        self.assertTrue(product.is_published)
+
+        self.client.post(change_url, self.product_form_data())
+        product.refresh_from_db()
+        self.assertFalse(product.is_published)
+        self.assertEqual(
+            self.client.get(
+                reverse("product-detail", args=(product.slug,))
+            ).status_code,
+            404,
+        )
+
+    def test_admin_product_list_exposes_search_filters_order_and_image_preview(self):
+        from .admin import ProductAdmin
+
+        product = Product.objects.create(
+            category=self.category,
+            slug="admin-managed-cumin",
+            name="Admin managed cumin",
+            summary="Test summary.",
+            description="Test description.",
+        )
+        model_admin = ProductAdmin(Product, admin.site)
+
+        self.assertEqual(model_admin.search_fields, ("name", "slug"))
+        self.assertEqual(model_admin.list_filter, ("is_published", "category"))
+        self.assertIn("sort_order", model_admin.ordering)
+        self.assertIn("created_at", model_admin.list_display)
+        self.assertEqual(model_admin.image_preview(product), "No image uploaded.")
+
+        product.image.name = "products/missing-image.png"
+        self.assertEqual(model_admin.image_preview(product), "Image file is missing.")
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                product.image.save("test-image.png", uploaded_image(), save=False)
+                preview = str(model_admin.image_preview(product))
+        self.assertIn("<img", preview)
+        self.assertIn(product.image.name, preview)
+
+    def test_admin_delete_confirmation_and_delete_of_unlinked_product(self):
+        product = Product.objects.create(
+            category=self.category,
+            slug="deletable-product",
+            name="Deletable product",
+            summary="Test summary.",
+            description="Test description.",
+        )
+        delete_url = reverse("admin:api_product_delete", args=(product.pk,))
+
+        confirmation = self.client.get(delete_url)
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertContains(confirmation, "Are you sure")
+
+        response = self.client.post(delete_url, {"post": "yes"})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+        self.assertTrue(ProductCategory.objects.filter(pk=self.category.pk).exists())
+
+    def test_product_and_category_deletion_preserve_enquiry_relationships(self):
+        product = Product.objects.create(
+            category=self.category,
+            slug="enquiry-linked-product",
+            name="Enquiry linked product",
+            summary="Test summary.",
+            description="Test description.",
+        )
+        enquiry = ExportEnquiry.objects.create(
+            full_name="Test buyer",
+            email="test-buyer@example.com",
+            country="Test country",
+            category=self.category,
+            product=product,
+            product_name_snapshot=product.name,
+        )
+
+        with self.assertRaises(ProtectedError):
+            product.delete()
+        with self.assertRaises(ProtectedError):
+            self.category.delete()
+
+        product.refresh_from_db()
+        enquiry.refresh_from_db()
+        self.assertEqual(enquiry.product_id, product.pk)
+        self.assertEqual(enquiry.category_id, self.category.pk)
+        self.assertTrue(ProductCategory.objects.filter(pk=self.category.pk).exists())
 
 
 class ExportEnquiryApiTests(APITestCase):

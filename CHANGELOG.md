@@ -43,3 +43,11 @@ All notable project changes are recorded here.
 - Added the responsive enquiry form, loading/validation/pending/success/error states, and product-specific enquiry preselection.
 - No email provider, privacy notice, retention policy, shared production rate-limit cache, or multi-product quote workflow is configured.
 - Verification results and launch limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+## [Phase 5] - Admin product management and content workflow
+
+- Improved Django Admin product/category workflows, publication controls, product search/filter/order, timestamps, and safe image previews.
+- Added matching-content/extension, file-size and dimension validation for product images, plus UUID-based filenames for new uploads.
+- Protected products referenced by enquiries from deletion; existing category and enquiry records were preserved. No product content or schema columns were added.
+- The reviewed migration changes Django ORM deletion behavior and image upload metadata only; generated database SQL was a no-op. Production media hosting remains unconfigured.
+- Verification results and image-storage limitations are recorded in [PROJECT_STATUS.md](PROJECT_STATUS.md).
