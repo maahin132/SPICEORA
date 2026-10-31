@@ -30,6 +30,10 @@ Browser regression integration was completed against an isolated SQLite test dat
 
 Browser regression should also cover the public homepage, catalogue, product detail, canonical `/contact/`, legacy `/enquiry/`, and protected operations routes. Responsive layout checks remain required at 320, 390, 768, 1024, and 1440 px, including pending/success/error states, navigation behavior, loading/empty/error/not-found states, image fallback, keyboard behavior, and mobile-menu focus behavior.
 
+### Phase 10 staff enquiry dashboard verification
+
+The 93-test isolated-SQLite backend suite now includes anonymous, customer, staff-without-permission, view-only, change-only, list/detail privacy, CSRF, invalid-status, unknown-field, unsupported-method, filter/search privacy and Admin-deletion regression cases for the staff enquiry dashboard. Vitest also covers inbox rendering/list privacy, detail rendering and a CSRF PATCH interaction. These automated checks do not prove production session expiration, distributed throttling, or real-browser rendering across deployed environments.
+
 ## Proposed tests before public launch
 
 ### Backend

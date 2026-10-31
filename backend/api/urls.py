@@ -30,6 +30,8 @@ from .views import (
     ProcessingRecordOperationsView,
     ProductionBatchOperationsDetailView,
     ProductionBatchOperationsView,
+    StaffEnquiryCollectionView,
+    StaffEnquiryDetailView,
     health,
 )
 
@@ -50,6 +52,8 @@ urlpatterns = [
     path("v1/auth/providers/health/", ProviderHealthView.as_view(), name="auth-provider-health"),
     path("v1/categories/", ProductCategoryListView.as_view(), name="product-category-list"),
     path("v1/enquiries/", ExportEnquiryCreateView.as_view(), name="enquiry-create"),
+    path("v1/operations/enquiries/", StaffEnquiryCollectionView.as_view(), name="staff-enquiry-list"),
+    path("v1/operations/enquiries/<uuid:public_reference>/", StaffEnquiryDetailView.as_view(), name="staff-enquiry-detail"),
     path("v1/products/", ProductListView.as_view(), name="product-list"),
     path(
         "v1/operations/farms/",

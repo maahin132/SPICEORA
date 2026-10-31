@@ -88,3 +88,11 @@ All notable project changes are recorded here.
 - Updated canonical public header, footer, homepage, catalogue, and product-detail links to `/contact/`; no company details, products, certifications, availability, or commercial claims were invented.
 - Added an unpublished [privacy-policy framework](docs/PRIVACY_POLICY_FRAMEWORK.md) marked owner-review-required, with no public policy route, consent field, migration, or Gmail enquiry notification.
 - Added Vitest/Testing Library route and payload regression tests. Phase 9 verification passed 3 frontend tests, frontend lint, and production build, plus 85 isolated-SQLite backend tests, Django checks, and migration drift checks. Browser-to-Django integration passed with an isolated SQLite database: one UI POST for a double-click, HTTP 201 opaque receipt, HTTP 400 validation, corrected retry success, legacy query/hash preservation, product/category preselection, and no public private-field exposure. No migration or existing database record was added or changed.
+
+## [Phase 10] - Custom React staff enquiry dashboard
+
+- Resumed implementation from the `f1e700eab29756580d1dec7ad17344a38158a042` baseline and added the protected `/operations/enquiries` inbox and enquiry-detail routes.
+- Added staff-only list/detail/PATCH API behavior under `/api/v1/operations/enquiries/`, with separate `view_exportenquiry` and `change_exportenquiry` permissions, Django session authentication, CSRF on writes, four validated statuses (`new`, `in_progress`, `responded`, `closed`), pagination, filtering, search, internal-note updates, and no delete method.
+- Separated minimized list serialization from private authorized detail serialization; email, phone, message, and internal notes are not returned in the inbox list. Public enquiry submission remains unchanged.
+- Kept Django Admin available and disabled enquiry deletion. Added React route/permission guards and responsive inbox/detail presentation without sensitive browser storage.
+- Verification currently includes 93 isolated-SQLite backend tests, Django checks, migration-drift checks, 6 frontend tests, frontend lint, and production build. Final browser QA and release review are still pending; no migration, application record change, commit, or push is included.

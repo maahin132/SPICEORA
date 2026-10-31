@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, ArrowUpRight, Boxes, CircleUserRound, Leaf, LogOut, RefreshCw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Boxes, CircleUserRound, Leaf, LogOut, Mail, RefreshCw, ShieldCheck } from 'lucide-react'
 import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { authRequest } from '../api/auth.js'
 import { useAuth } from '../auth/useAuth.js'
 
 const operationPages = [
+  { path: 'enquiries', label: 'Enquiries', endpoint: 'operations/enquiries/', permission: 'exportenquiry', icon: Mail },
   { path: 'farms', label: 'Farms', endpoint: 'operations/farms/', permission: 'farm', icon: Leaf },
   { path: 'crop-seasons', label: 'Crop seasons', endpoint: 'operations/crop-seasons/', permission: 'cropseason', icon: Leaf },
   { path: 'harvests', label: 'Harvests', endpoint: 'operations/harvests/', permission: 'harvest', icon: Leaf },

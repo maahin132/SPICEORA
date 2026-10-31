@@ -18,6 +18,7 @@ import {
 } from './pages/OperationsPages.jsx'
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
+import { StaffEnquiryDetailPage, StaffEnquiryInboxPage } from './pages/StaffEnquiryDashboard.jsx'
 
 function EnquiryCompatibilityRedirect() {
   const location = useLocation()
@@ -61,6 +62,8 @@ function App() {
         <Route path="/operations/login" element={<LoginPage audience="staff" />} />
         <Route path="/operations" element={<ProtectedOperationsRoute />}>
           <Route index element={<OperationsDashboard />} />
+          <Route path="enquiries" element={<StaffEnquiryInboxPage />} />
+          <Route path="enquiries/:publicReference" element={<StaffEnquiryDetailPage />} />
           <Route path=":section" element={<OperationsCollectionPage />} />
         </Route>
         <Route

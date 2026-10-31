@@ -190,6 +190,9 @@ class ExportEnquiryAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 class HistoricalAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")

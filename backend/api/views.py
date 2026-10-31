@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -500,6 +501,177 @@ class StaffModelPermissions(DjangoModelPermissions):
         "HEAD": ["%(app_label)s.view_%(model_name)s"],
         "OPTIONS": ["%(app_label)s.view_%(model_name)s"],
     }
+
+
+class StaffEnquiryListSerializer(serializers.ModelSerializer):
+    category = ProductCategorySerializer(read_only=True)
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExportEnquiry
+        fields = (
+            "public_reference",
+            "category",
+            "product",
+            "product_name_snapshot",
+            "quantity",
+            "quantity_unit",
+            "status",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_product(self, enquiry):
+        if not enquiry.product:
+            return None
+        return {"slug": enquiry.product.slug, "name": enquiry.product.name}
+
+
+class StaffEnquiryDetailSerializer(StaffEnquiryListSerializer):
+    class Meta(StaffEnquiryListSerializer.Meta):
+        fields = StaffEnquiryListSerializer.Meta.fields + (
+            "full_name",
+            "company_name",
+            "email",
+            "phone",
+            "country",
+            "message",
+            "internal_notes",
+        )
+
+
+class StaffEnquiryPatchSerializer(serializers.ModelSerializer):
+    status = serializers.ChoiceField(choices=ExportEnquiry.Status.choices)
+    internal_notes = serializers.CharField(required=False, allow_blank=True, max_length=5000)
+
+    class Meta:
+        model = ExportEnquiry
+        fields = ("status", "internal_notes")
+        extra_kwargs = {"status": {"required": False}}
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                {"non_field_errors": ["Provide status or internal_notes."]}
+            )
+        return attrs
+
+
+class StaffEnquiryCollectionView(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAdminUser, StaffModelPermissions)
+    pagination_class = OperationsPagination
+    queryset = ExportEnquiry.objects.select_related("category", "product")
+
+    def get(self, request):
+        allowed = {"page", "q", "status", "category", "product", "date_from", "date_to"}
+        errors = {key: ["Unknown query parameter."] for key in set(request.query_params) - allowed}
+        repeated = {
+            key for key in request.query_params
+            if len(request.query_params.getlist(key)) > 1
+        }
+        for key in repeated:
+            errors[key] = ["Provide this query parameter only once."]
+        if errors:
+            return Response({"errors": dict(sorted(errors.items()))}, status=400)
+
+        queryset = self.queryset.all()
+        query = request.query_params.get("q", "").strip()
+        if "q" in request.query_params and not query:
+            return Response({"errors": {"q": ["Enter a search term."]}}, status=400)
+        if query:
+            queryset = queryset.filter(
+                Q(public_reference__icontains=query)
+                | Q(full_name__icontains=query)
+                | Q(company_name__icontains=query)
+                | Q(country__icontains=query)
+                | Q(product_name_snapshot__icontains=query)
+            )
+
+        status_value = request.query_params.get("status")
+        if "status" in request.query_params:
+            valid_statuses = {item.value for item in ExportEnquiry.Status}
+            if status_value not in valid_statuses:
+                return Response({"errors": {"status": ["Select a valid enquiry status."]}}, status=400)
+            queryset = queryset.filter(status=status_value)
+
+        category_slug = request.query_params.get("category")
+        if "category" in request.query_params:
+            if not category_slug:
+                return Response({"errors": {"category": ["Enter a category slug."]}}, status=400)
+            queryset = queryset.filter(category__slug=category_slug)
+
+        product_slug = request.query_params.get("product")
+        if "product" in request.query_params:
+            if not product_slug:
+                return Response({"errors": {"product": ["Enter a product slug."]}}, status=400)
+            queryset = queryset.filter(product__slug=product_slug)
+
+        date_from = request.query_params.get("date_from")
+        date_to = request.query_params.get("date_to")
+        if "date_from" in request.query_params or "date_to" in request.query_params:
+            from django.utils.dateparse import parse_date
+            parsed_from = parse_date(date_from) if date_from else None
+            parsed_to = parse_date(date_to) if date_to else None
+            if "date_from" in request.query_params and parsed_from is None:
+                return Response({"errors": {"date_from": ["Enter a valid ISO date."]}}, status=400)
+            if "date_to" in request.query_params and parsed_to is None:
+                return Response({"errors": {"date_to": ["Enter a valid ISO date."]}}, status=400)
+            if parsed_from and parsed_to and parsed_from > parsed_to:
+                return Response({"errors": {"date_from": ["Start date must be before end date."]}}, status=400)
+            if parsed_from:
+                queryset = queryset.filter(created_at__date__gte=parsed_from)
+            if parsed_to:
+                queryset = queryset.filter(created_at__date__lte=parsed_to)
+
+        summary_counts = dict(
+            ExportEnquiry.objects.values("status").annotate(count=Count("id")).values_list("status", "count")
+        )
+        summary = {
+            "total": ExportEnquiry.objects.count(),
+            **{item.value: summary_counts.get(item.value, 0) for item in ExportEnquiry.Status},
+        }
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset.order_by("-created_at"), request, view=self)
+        payload = paginator.get_paginated_response(
+            StaffEnquiryListSerializer(page, many=True).data
+        ).data
+        payload["summary"] = summary
+        return Response(payload)
+
+
+class StaffEnquiryDetailView(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAdminUser, StaffModelPermissions)
+    queryset = ExportEnquiry.objects.select_related("category", "product")
+
+    def get_object(self, public_reference):
+        return get_object_or_404(
+            ExportEnquiry.objects.select_related("category", "product"),
+            public_reference=public_reference,
+        )
+
+    def get(self, request, public_reference):
+        return Response(StaffEnquiryDetailSerializer(self.get_object(public_reference)).data)
+
+    def patch(self, request, public_reference):
+        if not isinstance(request.data, dict):
+            return Response({"errors": {"non_field_errors": ["Submit a JSON object."]}}, status=400)
+        unknown_fields = set(request.data) - {"status", "internal_notes"}
+        if unknown_fields:
+            return Response(
+                {"errors": {field: ["Unknown field."] for field in sorted(unknown_fields)}},
+                status=400,
+            )
+        serializer = StaffEnquiryPatchSerializer(
+            self.get_object(public_reference),
+            data=request.data,
+            partial=True,
+        )
+        if not serializer.is_valid():
+            return Response({"errors": serializer.errors}, status=400)
+        enquiry = serializer.save()
+        return Response(StaffEnquiryDetailSerializer(enquiry).data)
 
 
 class ProtectedOperationsCollectionView(APIView):

@@ -62,6 +62,10 @@ Do not treat registration or recovery delivery as production-ready until Gmail S
 
 No migration, consent field, Gmail enquiry notification, product claim, company-contact claim, or public privacy policy was added. Before publication approval, the owner must supply legal identity, jurisdiction, controller, retention, contact channel, and approved policy wording. Do not commit or push until the implementation, test, documentation, browser, and security reviews are approved.
 
+## Phase 10 — custom React staff enquiry dashboard
+
+**Implementation complete for final review; not committed or pushed.** The existing `ExportEnquiry` model is reused for a protected operations inbox and detail route. Existing statuses, session authentication, Django model permissions, CSRF, public enquiry behavior and Django Admin fallback are preserved. No migration or application-record change is included; internal notes are staff-only, and list serialization excludes email, phone, message and notes.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

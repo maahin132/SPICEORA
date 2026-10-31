@@ -117,6 +117,13 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+if DEBUG:
+    for local_origin in (
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ):
+        if local_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(local_origin)
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = os.getenv(

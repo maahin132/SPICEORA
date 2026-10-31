@@ -20,7 +20,9 @@
 
 **Phase 8 — email-first authentication and operations dashboard:** Complete and verified. Customer registration activates after email OTP only; validated mobile numbers remain unverified. Login and recovery use email only, and SMS is deferred. Personal Gmail SMTP is configured and owner-approved registration and forgot-password OTP receipts were confirmed; Gmail remains a low-volume testing option, not production-grade transactional email.
 
-**Phase 9 — public contact page and enquiry compatibility:** Implemented for review; not committed. `/contact/` reuses the existing enquiry form/API, while `/enquiry/` redirects preserve query parameters and fragments. The privacy policy remains an unpublished owner-review framework. No migration, database record change, consent field, or Gmail enquiry notification was added.
+**Phase 9 — public contact page and enquiry compatibility:** Complete and pushed. `/contact/` reuses the existing enquiry form/API, while `/enquiry/` redirects preserve query parameters and fragments. The privacy policy remains an unpublished owner-review framework. No migration, database record change, consent field, or Gmail enquiry notification was added.
+
+**Phase 10 — custom React staff enquiry dashboard:** Implementation resumed from the approved baseline and is currently for final review; not committed or pushed. The staff inbox/detail UI, staff-only enquiry API, permission separation, list/detail privacy, status/notes controls, Admin deletion protection, and regression coverage are implemented without migrations or application-record changes. Browser and final security review remain subject to the results below.
 
 ### Environment
 

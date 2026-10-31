@@ -1359,3 +1359,170 @@ class FarmTraceabilityTests(APITestCase):
             batch.inventory_movements.get().movement_type,
             InventoryMovement.MovementType.PRODUCTION_RECEIPT,
         )
+
+
+class StaffEnquiryDashboardApiTests(APITestCase):
+    def setUp(self):
+        self.category = ProductCategory.objects.create(
+            name="Test category",
+            slug="test-category",
+        )
+        self.enquiry = ExportEnquiry.objects.create(
+            full_name="Private Buyer",
+            company_name="Private Company",
+            email="private-buyer@example.com",
+            phone="+10000000000",
+            country="Test Country",
+            category=self.category,
+            quantity=Decimal("25.000"),
+            quantity_unit=ExportEnquiry.QuantityUnit.KILOGRAM,
+            message="Private test message.",
+            status=ExportEnquiry.Status.NEW,
+            internal_notes="Private staff note.",
+        )
+        self.list_url = reverse("staff-enquiry-list")
+        self.detail_url = reverse("staff-enquiry-detail", args=[self.enquiry.public_reference])
+
+    def make_staff(self, username, *permissions):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            username=username,
+            email=f"{username}@example.com",
+            password="test-only-password",
+            is_staff=True,
+        )
+        if permissions:
+            content_type = ContentType.objects.get_for_model(ExportEnquiry)
+            user.user_permissions.add(*[
+                Permission.objects.get(
+                    content_type=content_type,
+                    codename=codename,
+                )
+                for codename in permissions
+            ])
+        return user
+
+    def test_anonymous_customer_and_staff_without_permission_are_denied(self):
+        self.assertIn(self.client.get(self.list_url).status_code, (401, 403))
+
+        customer = get_user_model().objects.create_user(
+            username="enquiry-customer",
+            email="customer@example.com",
+            password="test-only-password",
+        )
+        self.client.force_authenticate(customer)
+        self.assertEqual(self.client.get(self.list_url).status_code, 403)
+
+        staff = self.make_staff("enquiry-no-permission")
+        self.client.force_authenticate(staff)
+        self.assertEqual(self.client.get(self.list_url).status_code, 403)
+
+    def test_view_permission_returns_paginated_private_data_only_on_detail(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff = self.make_staff("enquiry-viewer", "view_exportenquiry")
+        self.client.force_authenticate(staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertIn("results", response.data)
+        row = response.data["results"][0]
+        for field in ("email", "phone", "message", "internal_notes", "full_name", "company_name"):
+            self.assertNotIn(field, row)
+
+        detail = self.client.get(self.detail_url)
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data["email"], "private-buyer@example.com")
+        self.assertEqual(detail.data["internal_notes"], "Private staff note.")
+
+    def test_view_permission_denies_patch_and_change_permission_is_separate(self):
+        viewer = self.make_staff("enquiry-view-only", "view_exportenquiry")
+        self.client.force_authenticate(viewer)
+        self.assertEqual(
+            self.client.patch(self.detail_url, {"status": "responded"}, format="json").status_code,
+            403,
+        )
+
+        editor = self.make_staff("enquiry-editor", "view_exportenquiry", "change_exportenquiry")
+        self.client.force_authenticate(editor)
+        response = self.client.patch(
+            self.detail_url,
+            {"status": "responded", "internal_notes": "Updated by staff."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.enquiry.refresh_from_db()
+        self.assertEqual(self.enquiry.status, ExportEnquiry.Status.RESPONDED)
+        self.assertEqual(self.enquiry.internal_notes, "Updated by staff.")
+
+    def test_patch_rejects_unknown_fields_and_invalid_status(self):
+        editor = self.make_staff("enquiry-editor-validation", "view_exportenquiry", "change_exportenquiry")
+        self.client.force_authenticate(editor)
+
+        unknown = self.client.patch(self.detail_url, {"email": "changed@example.com"}, format="json")
+        self.assertEqual(unknown.status_code, 400)
+        self.assertIn("email", unknown.data["errors"])
+
+        invalid = self.client.patch(self.detail_url, {"status": "completed"}, format="json")
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_dashboard_filters_search_and_no_email_phone_search(self):
+        editor = self.make_staff("enquiry-filter-staff", "view_exportenquiry")
+        self.client.force_authenticate(editor)
+
+        status_result = self.client.get(self.list_url, {"status": "new"})
+        self.assertEqual(status_result.status_code, 200)
+        self.assertEqual(status_result.data["count"], 1)
+
+        category_result = self.client.get(self.list_url, {"category": "test-category"})
+        self.assertEqual(category_result.status_code, 200)
+        self.assertEqual(category_result.data["count"], 1)
+
+        name_result = self.client.get(self.list_url, {"q": "Private Buyer"})
+        self.assertEqual(name_result.status_code, 200)
+        self.assertEqual(name_result.data["count"], 1)
+
+        email_result = self.client.get(self.list_url, {"q": "private-buyer@example.com"})
+        self.assertEqual(email_result.status_code, 200)
+        self.assertEqual(email_result.data["count"], 0)
+
+    def test_delete_methods_and_invalid_status_summary_are_not_exposed(self):
+        editor = self.make_staff("enquiry-method-staff", "view_exportenquiry", "change_exportenquiry")
+        self.client.force_authenticate(editor)
+
+        self.assertEqual(self.client.put(self.detail_url, {}, format="json").status_code, 405)
+        self.assertEqual(self.client.delete(self.detail_url).status_code, 403)
+        response = self.client.get(self.list_url, {"status": "completed"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_staff_enquiry_patch_uses_session_authentication_and_csrf_for_writes(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        from rest_framework.test import APIClient
+
+        staff = self.make_staff("enquiry-csrf", "view_exportenquiry", "change_exportenquiry")
+        client = APIClient(enforce_csrf_checks=True)
+        client.force_login(staff)
+
+        response = client.patch(
+            self.detail_url,
+            {"status": "closed"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.enquiry.refresh_from_db()
+        self.assertEqual(self.enquiry.status, ExportEnquiry.Status.NEW)
+
+    def test_enquiry_admin_delete_is_disabled(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="enquiry-admin-delete",
+            email="enquiry-admin-delete@example.com",
+            password="test-only-password",
+        )
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse("admin:api_exportenquiry_delete", args=[self.enquiry.pk]))
+        self.assertEqual(response.status_code, 403)
