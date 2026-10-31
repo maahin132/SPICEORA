@@ -18,7 +18,9 @@
 
 **Phase 7 — own farm and crop traceability foundation:** Implemented. Added private farm, season, harvest, production batch, processing-event, and inventory-ledger models; Django Admin workflows; and paginated staff-only APIs. The reviewed additive migration is applied to `spiceora_db`; no farm or operational records were seeded.
 
-**Phase 8 — email-first authentication and operations dashboard:** In progress. Customer registration activates after email OTP only; validated mobile numbers remain unverified. Login and recovery use email only, and SMS is deferred. Personal Gmail SMTP is configured and owner-approved registration and forgot-password OTP receipts were confirmed; Gmail remains a low-volume testing option, not production-grade transactional email.
+**Phase 8 — email-first authentication and operations dashboard:** Complete and verified. Customer registration activates after email OTP only; validated mobile numbers remain unverified. Login and recovery use email only, and SMS is deferred. Personal Gmail SMTP is configured and owner-approved registration and forgot-password OTP receipts were confirmed; Gmail remains a low-volume testing option, not production-grade transactional email.
+
+**Phase 9 — public contact page and enquiry compatibility:** Implemented for review; not committed. `/contact/` reuses the existing enquiry form/API, while `/enquiry/` redirects preserve query parameters and fragments. The privacy policy remains an unpublished owner-review framework. No migration, database record change, consent field, or Gmail enquiry notification was added.
 
 ### Environment
 

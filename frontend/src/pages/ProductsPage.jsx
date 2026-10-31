@@ -87,8 +87,8 @@ function ProductsPage() {
                 className="button button-primary"
                 to={
                   category
-                    ? `/enquiry/?category=${encodeURIComponent(category)}`
-                    : '/enquiry/'
+                    ? `/contact/?category=${encodeURIComponent(category)}`
+                                        : '/contact/'
                 }
               >
                 Make a product enquiry

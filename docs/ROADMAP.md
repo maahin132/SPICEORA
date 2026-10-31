@@ -56,6 +56,12 @@ Phase 7 stopped at the internal traceability foundation and was approved as the 
 
 Do not treat registration or recovery delivery as production-ready until Gmail SMTP settings and an App Password are configured and a test OTP is received in an owner-approved inbox. Gmail SMTP is a low-volume, best-effort option, not a transactional email guarantee. No SMS provider or paid plan may be enabled. Finish backend and browser/responsive QA, inspect secret/diff state, and re-verify permission and CSRF behavior before any Phase 8 completion claim. Do not start Phase 9 without explicit owner approval.
 
+## Phase 9 — public contact page and legacy enquiry compatibility
+
+**Implementation complete for review.** Added canonical `/contact/` routing while reusing the existing enquiry form and unchanged public enquiry API. Legacy `/enquiry/` routes redirect without losing query parameters, hashes, or product/category preselection. Public navigation points to the canonical route. A privacy-policy framework is present only as unpublished owner-review content.
+
+No migration, consent field, Gmail enquiry notification, product claim, company-contact claim, or public privacy policy was added. Before publication approval, the owner must supply legal identity, jurisdiction, controller, retention, contact channel, and approved policy wording. Do not commit or push until the implementation, test, documentation, browser, and security reviews are approved.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

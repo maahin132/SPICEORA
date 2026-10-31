@@ -19,8 +19,8 @@ function fieldError(errors, name) {
 
 function EnquiryPage() {
   usePageMetadata(
-    'Export Enquiry | SPICEORA',
-    'Share a product or category enquiry with SPICEORA using the export enquiry form.',
+    'Contact & Export Enquiry | SPICEORA',
+        'Share a product or category enquiry with SPICEORA using the public contact and export enquiry form.'
   )
   const [searchParams] = useSearchParams()
   const productSlug = searchParams.get('product') || ''

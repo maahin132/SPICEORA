@@ -89,7 +89,7 @@ function HomeProductPreview() {
       <div className="catalog-empty catalog-empty--compact">
         <p className="eyebrow">Catalogue status</p>
         <p>No products have been published yet.</p>
-        <Link className="text-link" to="/enquiry/">
+        <Link className="text-link" to="/contact/">
           Make a product enquiry
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
         </Link>
@@ -129,7 +129,7 @@ function HomePage() {
             the heart of its export focus.
           </p>
           <div className="hero-actions">
-            <Link className="button button-primary" to="/enquiry/">
+            <Link className="button button-primary" to="/contact/">
               Discuss an export enquiry
               <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
             </Link>
@@ -201,7 +201,7 @@ function HomePage() {
               The story, sourcing details and product information will be
               shared here as they are confirmed by the company—never assumed.
             </p>
-            <Link className="text-link" to="/enquiry/">
+            <Link className="text-link" to="/contact/">
               Start a conversation
               <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
             </Link>
@@ -259,7 +259,7 @@ function HomePage() {
             Share the products or categories you are interested in. No response
             time or commercial terms are promised.
           </p>
-          <Link className="button button-primary" to="/enquiry/">
+          <Link className="button button-primary" to="/contact/">
             Open the enquiry form
             <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />
           </Link>

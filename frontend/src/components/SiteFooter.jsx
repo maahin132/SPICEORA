@@ -9,7 +9,7 @@ function SiteFooter() {
           SPICEORA<span aria-hidden="true">.</span>
         </Link>
         <p>From Indian Origins to Global Markets.</p>
-        <Link className="footer-contact-link" to="/enquiry/">
+        <Link className="footer-contact-link" to="/contact/">
           Export enquiry
           <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.8} />
         </Link>

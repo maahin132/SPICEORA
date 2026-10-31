@@ -24,7 +24,11 @@ npm run lint
 npm run build
 ```
 
-There is no frontend component/interaction test runner configured. Browser smoke checks should cover the home page, catalogue, enquiry form, and product-specific enquiry preselection at desktop and mobile widths; form validation, pending/success/error states; product list/filter/detail navigation; loading/empty/error/not-found states; image fallback; and mobile menu keyboard behavior. Product images are already rendered from API URLs in cards/details; missing or failed images use the shared SPICEORA placeholder.
+Phase 9 frontend verification uses Vitest, jsdom, React Testing Library, and user-event. Automated tests cover canonical `/contact/` rendering, `/enquiry/` legacy-query/hash preservation, product preselection, unchanged enquiry payload fields, and absence of consent/privacy-version fields.
+
+Browser regression integration was completed against an isolated SQLite test database. It verified the canonical contact page, legacy `/enquiry/` query/hash redirect, product/category preselection, HTTP 201 success with an opaque receipt, HTTP 400 server validation, corrected retry success, double-click protection with one POST request, and non-exposure of private enquiry fields. A `GET /api/v1/enquiries/` request returned HTTP 405, confirming no public list/read operation. The isolated database and its temporary settings/data were removed after testing.
+
+Browser regression should also cover the public homepage, catalogue, product detail, canonical `/contact/`, legacy `/enquiry/`, and protected operations routes. Responsive layout checks remain required at 320, 390, 768, 1024, and 1440 px, including pending/success/error states, navigation behavior, loading/empty/error/not-found states, image fallback, keyboard behavior, and mobile-menu focus behavior.
 
 ## Proposed tests before public launch
 

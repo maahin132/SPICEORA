@@ -1,4 +1,4 @@
-import { Link, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import SiteFooter from './components/SiteFooter.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import {
@@ -19,6 +19,21 @@ import {
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
 
+function EnquiryCompatibilityRedirect() {
+  const location = useLocation()
+  return (
+    <Navigate
+      replace
+      to={`/contact/${location.search}${location.hash}`}
+    />
+  )
+}
+
+function ContactCanonicalRedirect() {
+  const location = useLocation()
+  return <Navigate replace to={`/contact/${location.search}${location.hash}`} />
+}
+
 function App() {
   const location = useLocation()
   const inOperations = location.pathname.startsWith('/operations')
@@ -30,7 +45,10 @@ function App() {
       {!inOperations && <SiteHeader />}
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/enquiry/" element={<EnquiryPage />} />
+        <Route path="/contact/" element={<EnquiryPage />} />
+        <Route path="/contact" element={<ContactCanonicalRedirect />} />
+        <Route path="/enquiry/" element={<EnquiryCompatibilityRedirect />} />
+        <Route path="/enquiry" element={<EnquiryCompatibilityRedirect />} />
         <Route path="/products/" element={<ProductsPage />} />
         <Route path="/products/:slug/" element={<ProductDetailPage />} />
         <Route path="/register" element={<RegistrationPage />} />

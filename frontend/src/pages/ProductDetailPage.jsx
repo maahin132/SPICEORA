@@ -82,7 +82,7 @@ function ProductDetailPage() {
           </section>
           <Link
             className="button button-primary product-enquiry-cta"
-            to={`/enquiry/?product=${encodeURIComponent(product.slug)}&category=${encodeURIComponent(product.category.slug)}`}
+            to={`/contact/?product=${encodeURIComponent(product.slug)}&category=${encodeURIComponent(product.category.slug)}`}
           >
             Enquire about this product
             <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.8} />

@@ -80,3 +80,11 @@ All notable project changes are recorded here.
 - Registration account-enumeration fix: new, duplicate-identifier, and delivery-failure registration attempts now share a generic HTTP 201 response structure. Duplicate submissions preserve database uniqueness, create no account/challenge, and send no OTP. Added response-equivalence, side-effect and minimum-duration regression tests. The one-second timing floor reduces fast-path differences but does not guarantee constant-time behavior when real SMTP is slower.
 - Added fail-fast Django startup validation for an empty or example-placeholder `DJANGO_SECRET_KEY`, with three regression tests; documented the requirement for deployments.
 - Verification after the registration privacy and secret-key validation fixes: all 85 backend tests passed on isolated SQLite; Django checks and migration checks passed; frontend lint and production build passed.
+
+## [Phase 9] - Public contact page and enquiry compatibility
+
+- Added canonical React `/contact/` routing that reuses the existing `EnquiryPage`, unchanged `/api/v1/enquiries/` submission contract, and product/category preselection.
+- Added `/enquiry/` and `/enquiry` compatibility redirects that preserve query parameters and URL fragments while routing to `/contact/`.
+- Updated canonical public header, footer, homepage, catalogue, and product-detail links to `/contact/`; no company details, products, certifications, availability, or commercial claims were invented.
+- Added an unpublished [privacy-policy framework](docs/PRIVACY_POLICY_FRAMEWORK.md) marked owner-review-required, with no public policy route, consent field, migration, or Gmail enquiry notification.
+- Added Vitest/Testing Library route and payload regression tests. Phase 9 verification passed 3 frontend tests, frontend lint, and production build, plus 85 isolated-SQLite backend tests, Django checks, and migration drift checks. Browser-to-Django integration passed with an isolated SQLite database: one UI POST for a double-click, HTTP 201 opaque receipt, HTTP 400 validation, corrected retry success, legacy query/hash preservation, product/category preselection, and no public private-field exposure. No migration or existing database record was added or changed.
