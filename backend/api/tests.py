@@ -1187,6 +1187,59 @@ class FarmTraceabilityTests(APITestCase):
         self.assertEqual(len(first_page.data["results"]), 25)
         self.assertEqual(len(second_page.data["results"]), 2)
 
+    def test_crop_season_farm_filter_is_validated_and_paginated(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        other_farm = Farm.objects.create(
+            reference="FARM-FILTER-OTHER",
+            name="Other filter farm",
+            location="Test-only location",
+        )
+        for index in range(52):
+            CropSeason.objects.create(
+                reference=f"SEASON-FILTER-{index:02}",
+                farm=self.farm if index % 2 == 0 else other_farm,
+                crop_name="Test crop",
+            )
+        staff_user = get_user_model().objects.create_user(
+            username="season-filter-staff",
+            password="filter-pass",
+            is_staff=True,
+        )
+        content_type = ContentType.objects.get_for_model(CropSeason)
+        staff_user.user_permissions.add(
+            Permission.objects.get(content_type=content_type, codename="view_cropseason")
+        )
+        self.client.force_authenticate(staff_user)
+        url = reverse("operations-crop-season-list")
+
+        valid = self.client.get(url, {"farm_reference": self.farm.reference})
+        self.assertEqual(valid.status_code, 200)
+        self.assertEqual(valid.data["count"], 27)
+        self.assertEqual(len(valid.data["results"]), 25)
+
+        invalid = self.client.get(url, {"farm_reference": "FARM-MISSING"})
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn("farm_reference", invalid.data["errors"])
+
+        blank = self.client.get(url, {"farm_reference": " "})
+        self.assertEqual(blank.status_code, 400)
+        self.assertIn("farm_reference", blank.data["errors"])
+
+    def test_crop_season_farm_filter_requires_view_permission(self):
+        user_model = get_user_model()
+        customer = user_model.objects.create_user(
+            username="season-filter-customer",
+            password="filter-pass",
+        )
+        self.client.force_authenticate(customer)
+        response = self.client.get(
+            reverse("operations-crop-season-list"),
+            {"farm_reference": self.farm.reference},
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_correction_movements_require_extra_approval_permission(self):
         from django.contrib.auth.models import Permission
         from django.contrib.contenttypes.models import ContentType

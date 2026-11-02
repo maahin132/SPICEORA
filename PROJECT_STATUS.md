@@ -22,7 +22,9 @@
 
 **Phase 9 — public contact page and enquiry compatibility:** Complete and pushed. `/contact/` reuses the existing enquiry form/API, while `/enquiry/` redirects preserve query parameters and fragments. The privacy policy remains an unpublished owner-review framework. No migration, database record change, consent field, or Gmail enquiry notification was added.
 
-**Phase 10 — custom React staff enquiry dashboard:** Implementation resumed from the approved baseline and is currently for final review; not committed or pushed. The staff inbox/detail UI, staff-only enquiry API, permission separation, list/detail privacy, status/notes controls, Admin deletion protection, and regression coverage are implemented without migrations or application-record changes. Browser and final security review remain subject to the results below.
+**Phase 10 — custom React staff enquiry dashboard:** Complete and pushed after final release approval. The staff inbox/detail UI, staff-only enquiry API, permission separation, list/detail privacy, status/notes controls, Admin deletion protection, and regression coverage were verified.
+
+**Phase 11 — Farm and Crop Season operations dashboard:** Implementation is complete for review; not committed or pushed. Dedicated Farm and Crop Season list/detail/create/edit routes, validated paginated `farm_reference` filtering, a paginated Farm selector, permission guards, and responsive operations presentation are implemented without migrations or application-record writes. Browser testing confirmed real staff login, Farm and Crop Season routes, empty/error states, and logout on the local development environment.
 
 ### Environment
 

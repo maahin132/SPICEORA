@@ -794,6 +794,21 @@ class CropSeasonOperationsView(ProtectedOperationsCollectionView):
     queryset = CropSeason.objects.select_related("farm")
     serializer_class = CropSeasonSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        farm_reference = self.request.query_params.get("farm_reference")
+        if farm_reference is None:
+            return queryset
+        if not farm_reference.strip():
+            raise serializers.ValidationError(
+                {"errors": {"farm_reference": ["Provide a valid farm reference."]}}
+            )
+        if not Farm.objects.filter(reference=farm_reference).exists():
+            raise serializers.ValidationError(
+                {"errors": {"farm_reference": ["Unknown farm reference."]}}
+            )
+        return queryset.filter(farm__reference=farm_reference)
+
 
 class HarvestOperationsView(ProtectedOperationsCollectionView):
     queryset = Harvest.objects.select_related("crop_season")

@@ -105,6 +105,8 @@ Every request also requires an authenticated Django staff user. Session authenti
 
 Collection responses use the standard paginated object (`count`, `next`, `previous`, `results`) with 25 records per page. `POST` creates one record and returns it with `201 Created`; supported metadata detail routes use `PATCH` and require `change_*` permission. Validation errors return `400` as `{ "errors": { "<field>": ["..."] } }`; missing staff authentication or model permissions returns `403` (or `401` when the authentication layer provides a challenge); unsupported methods return `405`. Related records are submitted by their unique reference string, e.g. `farm_reference`, `crop_season_reference`, `harvest_reference`, or `batch_reference`. Internal notes and supporting document references are visible only to authorized staff.
 
+`GET /api/v1/operations/crop-seasons/?farm_reference=FARM-REFERENCE` returns seasons linked to the supplied existing Farm reference, preserves the standard paginated contract, and requires `api.view_cropseason`. Blank or unknown references return `400`; anonymous/customer and staff without view permission receive `401/403` instead of accessing records.
+
 The batch endpoint returns `crop_season_reference`, `farm_reference`, and current `available_quantity_kg` so the harvest lineage and stock are explicit. The inventory movement list returns immutable event data; query the batch collection for its current availability. Product and enquiry public contracts are unchanged.
 
 ### Operation payloads

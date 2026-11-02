@@ -34,6 +34,10 @@ Browser regression should also cover the public homepage, catalogue, product det
 
 The 93-test isolated-SQLite backend suite now includes anonymous, customer, staff-without-permission, view-only, change-only, list/detail privacy, CSRF, invalid-status, unknown-field, unsupported-method, filter/search privacy and Admin-deletion regression cases for the staff enquiry dashboard. Vitest also covers inbox rendering/list privacy, detail rendering and a CSRF PATCH interaction. These automated checks do not prove production session expiration, distributed throttling, or real-browser rendering across deployed environments.
 
+### Phase 11 Farm and Crop Season verification
+
+The 95-test isolated-SQLite backend suite includes valid, invalid, blank, unauthorized, and paginated Farm-reference filtering for Crop Seasons, plus existing Farm/Crop Season validation and relationship coverage. Vitest includes Farm empty-state/create permissions, Crop Season selector empty state, existing Phase 10 regression, and public contact regressions. Frontend lint and production build passed. Real authorized staff browser testing passed for login, Farm list, Farm create-form rendering, Crop Season create-selector empty state, and logout. Temporary browser test records were not created or modified.
+
 ## Proposed tests before public launch
 
 ### Backend

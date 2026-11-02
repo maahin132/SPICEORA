@@ -19,6 +19,16 @@ import {
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
 import { StaffEnquiryDetailPage, StaffEnquiryInboxPage } from './pages/StaffEnquiryDashboard.jsx'
+import {
+  FarmCreatePage,
+  FarmDetailPage,
+  FarmEditPage,
+  FarmListPage,
+  CropSeasonCreatePage,
+  CropSeasonDetailPage,
+  CropSeasonEditPage,
+  CropSeasonListPage,
+} from './pages/FarmSeasonOperationsPages.jsx'
 
 function EnquiryCompatibilityRedirect() {
   const location = useLocation()
@@ -64,6 +74,14 @@ function App() {
           <Route index element={<OperationsDashboard />} />
           <Route path="enquiries" element={<StaffEnquiryInboxPage />} />
           <Route path="enquiries/:publicReference" element={<StaffEnquiryDetailPage />} />
+          <Route path="farms" element={<FarmListPage />} />
+          <Route path="farms/new" element={<FarmCreatePage />} />
+          <Route path="farms/:reference" element={<FarmDetailPage />} />
+          <Route path="farms/:reference/edit" element={<FarmEditPage />} />
+          <Route path="crop-seasons" element={<CropSeasonListPage />} />
+          <Route path="crop-seasons/new" element={<CropSeasonCreatePage />} />
+          <Route path="crop-seasons/:reference" element={<CropSeasonDetailPage />} />
+          <Route path="crop-seasons/:reference/edit" element={<CropSeasonEditPage />} />
           <Route path=":section" element={<OperationsCollectionPage />} />
         </Route>
         <Route

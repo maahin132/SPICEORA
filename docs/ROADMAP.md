@@ -66,6 +66,10 @@ No migration, consent field, Gmail enquiry notification, product claim, company-
 
 **Implementation complete for final review; not committed or pushed.** The existing `ExportEnquiry` model is reused for a protected operations inbox and detail route. Existing statuses, session authentication, Django model permissions, CSRF, public enquiry behavior and Django Admin fallback are preserved. No migration or application-record change is included; internal notes are staff-only, and list serialization excludes email, phone, message and notes.
 
+## Phase 11 — Farm and Crop Season operations dashboard
+
+**Implementation complete for final review; not committed or pushed.** Dedicated React workflows reuse existing session authentication, CSRF and `authRequest()` behavior while preserving Django Admin and generic operations routes. The Crop Season collection supports validated `?farm_reference=FARM-REFERENCE` filtering without changing the paginated response contract; the Farm selector uses page-number pagination and maintains the selected reference across pages. No migration, existing database record change, package addition, commit, or push is included.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

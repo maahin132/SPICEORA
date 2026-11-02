@@ -1996,6 +1996,121 @@ a:focus-visible {
   border-bottom: 0;
 }
 
+.operations-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.operations-primary-action,
+.operations-back-button,
+.operations-pagination-button,
+.operations-row-actions a,
+.operations-row-link {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(32, 59, 48, 0.38);
+  color: var(--color-forest);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.operations-primary-action {
+  color: var(--color-ivory);
+  border-color: var(--color-forest);
+  background: var(--color-forest);
+}
+
+.operations-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.operations-row-actions a,
+.operations-row-link {
+  min-height: 2.1rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.operations-detail-card,
+.operations-detail-section {
+  margin-bottom: 1rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.operations-detail-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.operations-detail-card dl > div {
+  min-width: 0;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.operations-detail-card dt {
+  color: var(--color-olive-grey);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.operations-detail-card dd {
+  margin: 0.25rem 0 0;
+  color: var(--color-forest);
+  overflow-wrap: anywhere;
+}
+
+.operations-detail-wide {
+  grid-column: 1 / -1;
+}
+
+.operations-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  color: var(--color-olive-grey);
+  font-size: 0.72rem;
+}
+
+.operations-pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.farm-selector {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+  .operations-detail-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-detail-wide {
+    grid-column: auto;
+  }
+
+  .operations-header-actions,
+  .operations-pagination {
+    justify-content: flex-start;
+  }
+}
+
 .operations-back {
   display: inline-flex;
   align-items: center;

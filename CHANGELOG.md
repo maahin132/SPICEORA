@@ -96,3 +96,10 @@ All notable project changes are recorded here.
 - Separated minimized list serialization from private authorized detail serialization; email, phone, message, and internal notes are not returned in the inbox list. Public enquiry submission remains unchanged.
 - Kept Django Admin available and disabled enquiry deletion. Added React route/permission guards and responsive inbox/detail presentation without sensitive browser storage.
 - Verification currently includes 93 isolated-SQLite backend tests, Django checks, migration-drift checks, 6 frontend tests, frontend lint, and production build. Final browser QA and release review are still pending; no migration, application record change, commit, or push is included.
+
+## [Phase 11] - Farm and Crop Season operations dashboard
+
+- Added dedicated React list, detail, create, and edit workflows for Farms and Crop Seasons under `/operations/farms` and `/operations/crop-seasons`, preserving session authentication, CSRF writes, Django model permissions, Django Admin fallback, and unrelated generic operations routes.
+- Added validated `farm_reference` filtering to the Crop Season collection API with backward-compatible pagination metadata and dedicated valid, invalid, blank, unauthorized, and pagination coverage.
+- Added responsive operations presentation, loading, empty/error, detail, row-action, pagination, permission, and historical-data feedback states. Added a controlled paginated Farm selector that preserves the selection and never downloads unlimited records.
+- Verification passed 95 isolated-SQLite backend tests, Django system checks, migration drift checks, 9 Vitest tests, frontend lint, and production build. Real authorized staff browser login, route, empty-state, selector-empty-state, and logout checks passed locally; no migration, application record change, commit, or push was performed.
