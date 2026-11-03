@@ -24,7 +24,9 @@
 
 **Phase 10 — custom React staff enquiry dashboard:** Complete and pushed after final release approval. The staff inbox/detail UI, staff-only enquiry API, permission separation, list/detail privacy, status/notes controls, Admin deletion protection, and regression coverage were verified.
 
-**Phase 11 — Farm and Crop Season operations dashboard:** Implementation is complete for review; not committed or pushed. Dedicated Farm and Crop Season list/detail/create/edit routes, validated paginated `farm_reference` filtering, a paginated Farm selector, permission guards, and responsive operations presentation are implemented without migrations or application-record writes. Browser testing confirmed real staff login, Farm and Crop Season routes, empty/error states, and logout on the local development environment.
+**Phase 11 — Farm and Crop Season operations dashboard:** Complete and released as commit `0f75950c1d72ad3ff78ad2e95b5eef4f2562d919`. Dedicated Farm and Crop Season list/detail/create/edit routes, validated paginated `farm_reference` filtering, paginated selectors, permission guards, and responsive operations presentation were verified.
+
+**Phase 12 — Harvest operations management:** Implementation and isolated verification are complete. Dedicated Harvest routes, validated collection filters, closed/cancelled Season creation protection, selector pagination, backend-supported historical-lock metadata, and focused tests have been added. Verification passed 100 complete isolated-SQLite Django tests via `py manage.py test` and 13 Vitest tests, plus frontend lint/build and Django checks/migration drift checks. Isolated browser checks confirmed CRUD presentation, selector pagination with selection persistence, permissions, customer denial, CSRF-aware authenticated requests and logout redirect behavior; actual session expiration was not separately tested; no horizontal overflow was found at 320/390/768/1024/1440px. Temporary accounts, records, settings, and SQLite files were removed. Commit and push remain pending; no migration or existing application-record change was made.
 
 ### Environment
 

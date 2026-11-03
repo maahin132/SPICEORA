@@ -1413,6 +1413,135 @@ class FarmTraceabilityTests(APITestCase):
             InventoryMovement.MovementType.PRODUCTION_RECEIPT,
         )
 
+    def test_harvest_filters_are_validated_and_support_pagination(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        other_farm = Farm.objects.create(reference="FARM-HARVEST-OTHER", name="Other farm", location="Test location")
+        other_season = CropSeason.objects.create(reference="SEASON-HARVEST-OTHER", farm=other_farm, crop_name="Other crop")
+        for index in range(26):
+            Harvest.objects.create(
+                reference=f"HARVEST-FILTER-{index:02}",
+                crop_season=self.season if index % 2 == 0 else other_season,
+                harvest_date=timezone.localdate() - timedelta(days=30 + index),
+                quantity=Decimal("1.000") + index,
+                quantity_unit="kg",
+            )
+
+        staff = get_user_model().objects.create_user(username="harvest-filter-staff", email="harvest-filter@example.com", is_staff=True)
+        content_type = ContentType.objects.get_for_model(Harvest)
+        staff.user_permissions.add(Permission.objects.get(content_type=content_type, codename="view_harvest"))
+        self.client.force_authenticate(staff)
+        url = reverse("operations-harvest-list")
+
+        valid = self.client.get(url, {"farm_reference": self.farm.reference, "page": 1})
+        self.assertEqual(valid.status_code, 200)
+        self.assertEqual(valid.data["count"], 14)
+        self.assertIn("next", valid.data)
+
+        mismatch = self.client.get(url, {"farm_reference": self.farm.reference, "crop_season_reference": other_season.reference})
+        self.assertEqual(mismatch.status_code, 400)
+
+        unknown_farm = self.client.get(url, {"farm_reference": "FARM-UNKNOWN"})
+        self.assertEqual(unknown_farm.status_code, 404)
+        unknown_season = self.client.get(url, {"crop_season_reference": "SEASON-UNKNOWN"})
+        self.assertEqual(unknown_season.status_code, 404)
+
+        blank = self.client.get(url, {"farm_reference": " "})
+        self.assertEqual(blank.status_code, 400)
+        self.assertIn("farm_reference", blank.data["errors"])
+
+    def test_eligible_for_harvest_filter_runs_before_pagination(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        for index in range(30):
+            CropSeason.objects.create(
+                reference=f"SEASON-ELIGIBLE-{index:02}",
+                farm=self.farm,
+                crop_name="Eligible crop",
+                status=(CropSeason.Status.CLOSED if index % 13 == 0 else CropSeason.Status.PLANNED),
+            )
+
+        staff = get_user_model().objects.create_user(username="season-filter-staff", email="season-filter@example.com", is_staff=True)
+        content_type = ContentType.objects.get_for_model(CropSeason)
+        staff.user_permissions.add(Permission.objects.get(content_type=content_type, codename="view_cropseason"))
+        self.client.force_authenticate(staff)
+        url = reverse("operations-crop-season-list")
+
+        valid = self.client.get(url, {"farm_reference": self.farm.reference, "eligible_for_harvest": "true", "page": 1})
+        self.assertEqual(valid.status_code, 200)
+        self.assertGreater(valid.data["count"], 25)
+        self.assertTrue(all(row["status"] not in ("closed", "cancelled") for row in valid.data["results"]))
+
+        invalid = self.client.get(url, {"farm_reference": self.farm.reference, "eligible_for_harvest": "yes"})
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_historical_harvest_detail_exposes_backend_lock(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        self.create_batch()
+        staff = get_user_model().objects.create_user(username="harvest-detail-staff", email="harvest-detail@example.com", is_staff=True)
+        content_type = ContentType.objects.get_for_model(Harvest)
+        staff.user_permissions.add(Permission.objects.get(content_type=content_type, codename="view_harvest"))
+        self.client.force_authenticate(staff)
+        response = self.client.get(reverse("operations-harvest-detail", args=[self.harvest.reference]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["historical_locked"])
+
+    def test_closed_and_cancelled_seasons_reject_harvest_creation(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        staff = get_user_model().objects.create_user(username="harvest-create-staff", email="harvest-create@example.com", is_staff=True)
+        content_type = ContentType.objects.get_for_model(Harvest)
+        staff.user_permissions.add(Permission.objects.get(content_type=content_type, codename="add_harvest"))
+        self.client.force_authenticate(staff)
+
+        for status in (CropSeason.Status.CLOSED, CropSeason.Status.CANCELLED):
+            season = CropSeason.objects.create(reference=f"SEASON-{status}", farm=self.farm, crop_name="Test crop", status=status)
+            with self.assertRaises(ValidationError):
+                Harvest(
+                    reference=f"MODEL-HARVEST-{status}",
+                    crop_season=season,
+                    harvest_date=timezone.localdate(),
+                    quantity=Decimal("10.000"),
+                    quantity_unit="kg",
+                ).full_clean()
+            response = self.client.post(
+                reverse("operations-harvest-list"),
+                {
+                    "reference": f"HARVEST-{status}",
+                    "crop_season_reference": season.reference,
+                    "harvest_date": timezone.localdate().isoformat(),
+                    "quantity": "10.000",
+                    "quantity_unit": "kg",
+                },
+                format="json",
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("crop_season_reference", response.data["errors"])
+
+    def test_historical_harvest_patch_only_allows_notes(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        self.create_batch()
+        staff = get_user_model().objects.create_user(username="harvest-change-staff", email="harvest-change@example.com", is_staff=True)
+        content_type = ContentType.objects.get_for_model(Harvest)
+        staff.user_permissions.add(Permission.objects.get(content_type=content_type, codename="change_harvest"))
+        self.client.force_authenticate(staff)
+        url = reverse("operations-harvest-detail", args=[self.harvest.reference])
+
+        notes = self.client.patch(url, {"notes": "Updated historical note."}, format="json")
+        self.assertEqual(notes.status_code, 200)
+        self.assertEqual(notes.data["notes"], "Updated historical note.")
+        self.assertTrue(notes.data["historical_locked"])
+
+        origin = self.client.patch(url, {"quantity": "999.000"}, format="json")
+        self.assertEqual(origin.status_code, 400)
+
 
 class StaffEnquiryDashboardApiTests(APITestCase):
     def setUp(self):

@@ -29,6 +29,12 @@ import {
   CropSeasonEditPage,
   CropSeasonListPage,
 } from './pages/FarmSeasonOperationsPages.jsx'
+import {
+  HarvestCreatePage,
+  HarvestDetailPage,
+  HarvestEditPage,
+  HarvestListPage,
+} from './pages/HarvestOperationsPages.jsx'
 
 function EnquiryCompatibilityRedirect() {
   const location = useLocation()
@@ -82,6 +88,10 @@ function App() {
           <Route path="crop-seasons/new" element={<CropSeasonCreatePage />} />
           <Route path="crop-seasons/:reference" element={<CropSeasonDetailPage />} />
           <Route path="crop-seasons/:reference/edit" element={<CropSeasonEditPage />} />
+          <Route path="harvests" element={<HarvestListPage />} />
+          <Route path="harvests/new" element={<HarvestCreatePage />} />
+          <Route path="harvests/:reference" element={<HarvestDetailPage />} />
+          <Route path="harvests/:reference/edit" element={<HarvestEditPage />} />
           <Route path=":section" element={<OperationsCollectionPage />} />
         </Route>
         <Route

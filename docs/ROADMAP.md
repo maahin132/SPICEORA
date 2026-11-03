@@ -70,6 +70,10 @@ No migration, consent field, Gmail enquiry notification, product claim, company-
 
 **Implementation complete for final review; not committed or pushed.** Dedicated React workflows reuse existing session authentication, CSRF and `authRequest()` behavior while preserving Django Admin and generic operations routes. The Crop Season collection supports validated `?farm_reference=FARM-REFERENCE` filtering without changing the paginated response contract; the Farm selector uses page-number pagination and maintains the selected reference across pages. No migration, existing database record change, package addition, commit, or push is included.
 
+## Phase 12 — Harvest Management
+
+**Implementation complete for final review; not committed, pushed, or released.** Dedicated Harvest list, detail, create and edit routes reuse existing Farm, Crop Season and Harvest models with no schema or migration change. The implementation adds validated Farm/CropSeason filters, server-side closed/cancelled creation protection, backend historical-lock metadata, backend eligibility filtering before pagination, selector workflows and responsive presentation. Isolated automated and browser verification is complete; temporary data was removed and release approval remains separate.
+
 ## Deferred / only if justified
 
 Localization, search, multiple currencies, CRM integration, enquiry attachments, buyer accounts, analytics, custom admin dashboards, and advanced catalogue filtering require an evidenced business need and owner approval. Do not build a SaaS/ERP/marketplace surface.

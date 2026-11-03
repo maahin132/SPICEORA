@@ -385,6 +385,17 @@ class Harvest(models.Model):
     def clean(self):
         super().clean()
         errors = {}
+        if (
+            self.pk is None
+            and self.crop_season_id
+            and self.crop_season.status in (
+                CropSeason.Status.CLOSED,
+                CropSeason.Status.CANCELLED,
+            )
+        ):
+            errors["crop_season"] = (
+                "New harvests cannot be created for closed or cancelled crop seasons."
+            )
         if self.quantity is not None and self.quantity <= 0:
             errors["quantity"] = "Harvest quantity must be positive."
         if self.crop_season_id and self.harvest_date:

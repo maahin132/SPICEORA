@@ -351,6 +351,7 @@ class CropSeasonSerializer(OperationsModelSerializer):
 
 
 class HarvestSerializer(OperationsModelSerializer):
+    historical_locked = serializers.SerializerMethodField()
     crop_season_reference = serializers.SlugRelatedField(
         source="crop_season",
         slug_field="reference",
@@ -366,10 +367,32 @@ class HarvestSerializer(OperationsModelSerializer):
             "quantity",
             "quantity_unit",
             "notes",
+            "historical_locked",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("created_at", "updated_at")
+        read_only_fields = ("historical_locked", "created_at", "updated_at")
+
+    def get_historical_locked(self, obj):
+        return obj.batches.exists()
+
+    def validate(self, attrs):
+        season = attrs.get("crop_season")
+        if self.instance is not None:
+            season = season or self.instance.crop_season
+        if season and season.status in (
+            CropSeason.Status.CLOSED,
+            CropSeason.Status.CANCELLED,
+        ):
+            if self.instance is None or season.pk != self.instance.crop_season_id:
+                raise serializers.ValidationError(
+                    {
+                        "crop_season_reference": [
+                            "New harvests cannot be created for closed or cancelled crop seasons."
+                        ]
+                    }
+                )
+        return super().validate(attrs)
 
 
 class ProductionBatchSerializer(OperationsModelSerializer):
@@ -797,6 +820,22 @@ class CropSeasonOperationsView(ProtectedOperationsCollectionView):
     def get_queryset(self):
         queryset = super().get_queryset()
         farm_reference = self.request.query_params.get("farm_reference")
+        eligible_reference = self.request.query_params.get("eligible_for_harvest")
+
+        if eligible_reference is not None:
+            if self.request.query_params.getlist("eligible_for_harvest") != [eligible_reference]:
+                raise serializers.ValidationError(
+                    {"errors": {"eligible_for_harvest": ["Provide this filter only once."]}}
+                )
+            if eligible_reference not in ("true", "false"):
+                raise serializers.ValidationError(
+                    {"errors": {"eligible_for_harvest": ["Use true or false."]}}
+                )
+            if eligible_reference == "true":
+                queryset = queryset.exclude(
+                    status__in=(CropSeason.Status.CLOSED, CropSeason.Status.CANCELLED)
+                )
+
         if farm_reference is None:
             return queryset
         if not farm_reference.strip():
@@ -811,8 +850,41 @@ class CropSeasonOperationsView(ProtectedOperationsCollectionView):
 
 
 class HarvestOperationsView(ProtectedOperationsCollectionView):
-    queryset = Harvest.objects.select_related("crop_season")
+    queryset = Harvest.objects.select_related("crop_season__farm")
     serializer_class = HarvestSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        farm_reference = self.request.query_params.get("farm_reference")
+        season_reference = self.request.query_params.get("crop_season_reference")
+
+        if farm_reference is not None:
+            if not farm_reference.strip():
+                raise serializers.ValidationError(
+                    {"errors": {"farm_reference": ["Provide a valid farm reference."]}}
+                )
+            farm = get_object_or_404(Farm, reference=farm_reference.strip())
+            queryset = queryset.filter(crop_season__farm=farm)
+
+        if season_reference is not None:
+            if not season_reference.strip():
+                raise serializers.ValidationError(
+                    {"errors": {"crop_season_reference": ["Provide a valid crop season reference."]}}
+                )
+            season = get_object_or_404(CropSeason, reference=season_reference.strip())
+            if farm_reference is not None and season.farm_id != farm.pk:
+                raise serializers.ValidationError(
+                    {
+                        "errors": {
+                            "crop_season_reference": [
+                                "The crop season does not belong to the supplied farm."
+                            ]
+                        }
+                    }
+                )
+            queryset = queryset.filter(crop_season=season)
+
+        return queryset
 
 
 class ProductionBatchOperationsView(ProtectedOperationsCollectionView):
@@ -843,7 +915,7 @@ class CropSeasonOperationsDetailView(ProtectedOperationsDetailView):
 
 
 class HarvestOperationsDetailView(ProtectedOperationsDetailView):
-    queryset = Harvest.objects.select_related("crop_season")
+    queryset = Harvest.objects.select_related("crop_season__farm")
     serializer_class = HarvestSerializer
 
 

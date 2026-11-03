@@ -38,6 +38,10 @@ The 93-test isolated-SQLite backend suite now includes anonymous, customer, staf
 
 The 95-test isolated-SQLite backend suite includes valid, invalid, blank, unauthorized, and paginated Farm-reference filtering for Crop Seasons, plus existing Farm/Crop Season validation and relationship coverage. Vitest includes Farm empty-state/create permissions, Crop Season selector empty state, existing Phase 10 regression, and public contact regressions. Frontend lint and production build passed. Real authorized staff browser testing passed for login, Farm list, Farm create-form rendering, Crop Season create-selector empty state, and logout. Temporary browser test records were not created or modified.
 
+### Phase 12 Harvest verification
+
+Focused isolated-SQLite Django tests verify valid, invalid, blank, unknown Harvest filters, combined filters, pagination metadata, mismatch rejection, closed/cancelled Season creation rejection, historical notes-only PATCH behavior, backend `historical_locked`, and eligible-before-pagination CropSeason filtering. The complete `py manage.py test` suite passed 100 tests on isolated SQLite. The dedicated Harvest Vitest suite covers list empty state/create action, selector-only CropSeason creation state, detail rendering, and Add-permission denial; 13 Vitest tests passed. Isolated-browser verification confirmed Harvest create and View/Change workflows, Farm selector pagination with selected-value preservation, detail rendering, customer and unauthenticated denial, logout redirect behavior, and 320/390/768/1024/1440px rendering without horizontal overflow. A separate browser or API session-expiration test was not performed. Temporary browser accounts and records were deleted and the isolated SQLite database/settings artifacts were removed. No migration or production/application database change was made.
+
 ## Proposed tests before public launch
 
 ### Backend
