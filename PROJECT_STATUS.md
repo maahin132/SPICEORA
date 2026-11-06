@@ -17,7 +17,7 @@
 | **Phase 10** | Custom React Staff Enquiry Inbox & Detail Dashboard | **Complete & Verified** | `e388bb3fe61744475c42c8ec4b0c07d845e59561` |
 | **Phase 11** | Farm & Crop Season Operations Management UI | **Complete & Verified** | `0f75950c1d72ad3ff78ad2e95b5eef4f2562d919` |
 | **Phase 12** | Harvest Operations Management & Historical Locks | **Complete & Verified** | `ba06e2d69f51f62f6ea63386748bdbff1259cc58` |
-| **Phase 13** | Documentation Overhaul & Navigation Upgrade | **Active Milestone** | Working tree (Phase 13.2 in progress) |
+| **Phase 13** | Documentation Overhaul & Navigation Upgrade | **Documentation implementation complete — release pending** | Working tree at baseline `3bf656f9` before Phase 13 release commit |
 
 ---
 

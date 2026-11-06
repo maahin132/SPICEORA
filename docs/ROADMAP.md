@@ -52,27 +52,27 @@ Phase 7 stopped at the internal traceability foundation and was approved as the 
 
 ## Phase 8 — authentication, OTP verification and operations dashboard
 
-**Implementation in progress.** Customer/staff session authentication, email-only OTP activation and recovery, Gmail SMTP integration using a Google App Password, and a permission-aware React operations console have been added. Mobile verification and SMS recovery are deferred; the existing Django user model is preserved and the account migration is additive.
+**Complete:** Customer/staff session authentication, email-only OTP activation and recovery, Gmail SMTP integration using a Google App Password, and a permission-aware React operations console are implemented. Mobile verification and SMS recovery remain deferred; the existing Django user model and additive account migration are preserved.
 
-Do not treat registration or recovery delivery as production-ready until Gmail SMTP settings and an App Password are configured and a test OTP is received in an owner-approved inbox. Gmail SMTP is a low-volume, best-effort option, not a transactional email guarantee. No SMS provider or paid plan may be enabled. Finish backend and browser/responsive QA, inspect secret/diff state, and re-verify permission and CSRF behavior before any Phase 8 completion claim. Do not start Phase 9 without explicit owner approval.
+Registration and recovery delivery require production-managed Gmail or another separately approved provider, tested sender configuration, and approved operational support before public launch. No SMS provider or paid plan is enabled.
 
 ## Phase 9 — public contact page and legacy enquiry compatibility
 
-**Implementation complete for review.** Added canonical `/contact/` routing while reusing the existing enquiry form and unchanged public enquiry API. Legacy `/enquiry/` routes redirect without losing query parameters, hashes, or product/category preselection. Public navigation points to the canonical route. A privacy-policy framework is present only as unpublished owner-review content.
+**Complete and released:** Added canonical `/contact/` routing while reusing the existing enquiry form and unchanged public enquiry API. Legacy `/enquiry/` routes redirect without losing query parameters, hashes, or product/category preselection. Public navigation points to the canonical route. A privacy-policy framework is present only as unpublished owner-review content.
 
-No migration, consent field, Gmail enquiry notification, product claim, company-contact claim, or public privacy policy was added. Before publication approval, the owner must supply legal identity, jurisdiction, controller, retention, contact channel, and approved policy wording. Do not commit or push until the implementation, test, documentation, browser, and security reviews are approved.
+No migration, consent field, Gmail enquiry notification, product claim, company-contact claim, or public privacy policy was added. Before publication approval, the owner must supply legal identity, jurisdiction, controller, retention, contact channel, and approved policy wording.
 
 ## Phase 10 — custom React staff enquiry dashboard
 
-**Implementation complete for final review; not committed or pushed.** The existing `ExportEnquiry` model is reused for a protected operations inbox and detail route. Existing statuses, session authentication, Django model permissions, CSRF, public enquiry behavior and Django Admin fallback are preserved. No migration or application-record change is included; internal notes are staff-only, and list serialization excludes email, phone, message and notes.
+**Complete and released:** The existing `ExportEnquiry` model is reused for a protected operations inbox and detail route. Existing statuses, session authentication, Django model permissions, CSRF, public enquiry behavior and Django Admin fallback are preserved. No migration or application-record change is included; internal notes are staff-only, and list serialization excludes email, phone, message and notes.
 
 ## Phase 11 — Farm and Crop Season operations dashboard
 
-**Implementation complete for final review; not committed or pushed.** Dedicated React workflows reuse existing session authentication, CSRF and `authRequest()` behavior while preserving Django Admin and generic operations routes. The Crop Season collection supports validated `?farm_reference=FARM-REFERENCE` filtering without changing the paginated response contract; the Farm selector uses page-number pagination and maintains the selected reference across pages. No migration, existing database record change, package addition, commit, or push is included.
+**Complete and released:** Dedicated React workflows reuse existing session authentication, CSRF and `authRequest()` behavior while preserving Django Admin and generic operations routes. The Crop Season collection supports validated `?farm_reference=FARM-REFERENCE` filtering without changing the paginated response contract; the Farm selector uses page-number pagination and maintains the selected reference across pages. No migration, existing database record change, package addition, commit, or push is included.
 
 ## Phase 12 — Harvest Management
 
-**Implementation complete for final review; not committed, pushed, or released.** Dedicated Harvest list, detail, create and edit routes reuse existing Farm, Crop Season and Harvest models with no schema or migration change. The implementation adds validated Farm/CropSeason filters, server-side closed/cancelled creation protection, backend historical-lock metadata, backend eligibility filtering before pagination, selector workflows and responsive presentation. Isolated automated and browser verification is complete; temporary data was removed and release approval remains separate.
+**Complete and released:** dedicated Harvest list, detail, create and edit routes reuse existing Farm, Crop Season and Harvest models with no schema or migration change. The implementation adds validated Farm/CropSeason filters, server-side closed/cancelled creation protection, backend historical-lock metadata, backend eligibility filtering before pagination, selector workflows and responsive presentation. Isolated automated and browser verification is complete; temporary data was removed and release approval remains separate.
 
 ## Deferred / only if justified
 

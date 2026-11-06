@@ -40,7 +40,27 @@ The 95-test isolated-SQLite backend suite includes valid, invalid, blank, unauth
 
 ### Phase 12 Harvest verification
 
-Focused isolated-SQLite Django tests verify valid, invalid, blank, unknown Harvest filters, combined filters, pagination metadata, mismatch rejection, closed/cancelled Season creation rejection, historical notes-only PATCH behavior, backend `historical_locked`, and eligible-before-pagination CropSeason filtering. The complete `py manage.py test` suite passed 100 tests on isolated SQLite. The dedicated Harvest Vitest suite covers list empty state/create action, selector-only CropSeason creation state, detail rendering, and Add-permission denial; 13 Vitest tests passed. Isolated-browser verification confirmed Harvest create and View/Change workflows, Farm selector pagination with selected-value preservation, detail rendering, customer and unauthenticated denial, logout redirect behavior, and 320/390/768/1024/1440px rendering without horizontal overflow. A separate browser or API session-expiration test was not performed. Temporary browser accounts and records were deleted and the isolated SQLite database/settings artifacts were removed. No migration or production/application database change was made.
+Focused isolated-SQLite Django tests verify valid, invalid, blank, unknown Harvest filters, combined filters, pagination metadata, mismatch rejection, closed/cancelled Season creation rejection, historical notes-only PATCH behavior, backend `historical_locked`, and eligible-before-pagination CropSeason filtering. The complete suite passed **100 tests** using `py manage.py test --settings=config.test_settings` (100 passed, 0 failed, 0 skipped; module-level exclusions must be reported if the command environment suppresses discovery). The dedicated Harvest Vitest suite covers list empty state/create action, selector-only CropSeason creation state, detail rendering, and Add-permission denial; the frontend verification suite passed 13 Vitest tests. Isolated-browser verification confirmed Harvest create and View/Change workflows, Farm selector pagination with selected-value preservation, detail rendering, customer and unauthenticated denial, logout redirect behavior, and 320/390/768/1024/1440px rendering without horizontal overflow. Customer denial was confirmed at HTTP 403 on a protected API/browser workflow. A separate browser or API session-expiration test was not performed; logout redirect is verified, not expiry. Temporary browser accounts and records were deleted and the isolated SQLite database/settings artifacts were removed. No migration or production/application database change was made.
+
+### Phase 13 documentation verification
+
+Documentation implementation is verified by source inspection rather than application behavior tests. Use the following non-destructive checks from repository root:
+
+```powershell
+git diff --check
+Get-ChildItem docs -Filter *.md -Recurse | ForEach-Object { $_.FullName }
+```
+
+For application setup and verification commands, see the [developer quickstart](./DEVELOPER_QUICKSTART.md). Documentation may link to owner-confirmation items and intentionally planned features; it must not present these as implementation facts. Relative Markdown links and the exact Phase 8–12 release boundaries must be reviewed whenever documentation is synchronized.
+
+### Evidence limitations
+
+- Passing isolated SQLite tests do not prove behavior on production MySQL concurrency or deployment configuration.
+- Vitest/jsdom does not replace deployed-browser behavior.
+- Browser width checks verify rendering at the stated widths in the recorded isolated environment; they do not prove every device/browser combination.
+- Customer denial in a separate test is not a substitute for staff session expiry testing or production load/security testing.
+- Mocked email delivery and registration/recovery tests do not prove production mailbox delivery, spam placement, or provider uptime.
+- Session timeout requires a configured backend expiry policy plus a separately scheduled or clock-manipulated browser/API test.
 
 ## Proposed tests before public launch
 

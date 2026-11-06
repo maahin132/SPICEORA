@@ -162,3 +162,24 @@ Registration payload fields: `full_name`, `email`, `mobile_number` (valid intern
 OTP payloads use `challenge_id` and `code`; recovery start accepts `identity` as the registered email (an optional `channel` must be `email`); SMS recovery is rejected. Recovery reset accepts `flow_id`, `password`, and `confirm_password`. Codes are cryptographically generated six-digit values, stored only as Django password hashes, expire after five minutes, permit at most five incorrect attempts, and can be verified once. Resends have a 60-second cooldown. DRF throttles limit requests by IP; an additional hashed account-identity throttle applies per account without placing raw identifiers in cache keys. `/api/v1/auth/me/` includes `mobile_verified` so clients never infer mobile verification from account activation.
 
 For the current no-cost, low-volume setup, the only permitted email provider is personal Gmail SMTP: `EMAIL_PROVIDER=gmail`, `GOOGLE_SMTP_HOST=smtp.gmail.com`, `GOOGLE_SMTP_PORT=587`, TLS, `GOOGLE_SMTP_LOGIN` (the full Gmail address), `GOOGLE_SMTP_APP_PASSWORD` (Google App Password, not the normal account password), and `DEFAULT_FROM_EMAIL` matching the Gmail address. App Passwords require Google 2-Step Verification and may not be available on some managed or protected accounts. The application fails closed if settings are missing or differ from the approved Gmail host/port/TLS/sender configuration; there is no provider fallback. This is a personal-account workaround for low-volume testing, not a production transactional email guarantee; Google can impose quotas or block suspicious sending. No SMS provider is configured or called. Provider health reports readiness only, not successful delivery. Registration returns the generic acknowledgement on SMTP failure and rolls back account/challenge creation; recovery remains generic to avoid account enumeration. Owner-approved registration and forgot-password OTP deliveries were tested and receipt confirmed, but this is not a production delivery guarantee.
+
+## Verified route inventory and implementation notes
+
+The source URL configuration currently declares 30 `path()` API routes. The following totals describe route declarations, not HTTP-method combinations.
+
+- `health` / liveness: 1 route.
+- Authentication and account recovery: 12 routes, including CSRF, registration, email/mobile verification, resend, login, logout, current identity, recovery, and provider health.
+- Public catalogue and enquiries: 5 routes (active categories, paginated products, product detail, public enquiry collection, and public enquiry receipt rejection boundary).
+- Staff enquiries: 2 routes (collection and UUID detail).
+- Operations: 12 routes for protected Farm, Crop Season, Harvest, Production Batch, Processing Record, and Inventory Movement resources.
+
+The route inventory must be checked against `backend/api/urls.py` after any source change. Implemented HTTP methods are controlled by class-based views and serializers. Do not infer a public list/detail/DELETE capability from a model or Django Admin registration.
+
+- Collections use standard paginated responses for implemented operations list views.
+- Detail view and PATCH behavior uses opaque/referenced identifiers, never database integer primary keys in public payloads.
+- Closed/cancelled Season creation is a backend enforcement rule; existing Harvest records remain readable.
+- Harvest detail/list responses include `historical_locked`; it is read-only state derived from the existence of a linked ProductionBatch, not a client-trusted flag.
+- Processing and inventory records are append/immutable by their existing contracts; no API DELETE is implemented.
+- No API route exposes internal notes outside authorized staff views.
+
+For exact route declarations, inspect [`backend/api/urls.py`](../backend/api/urls.py). For source-backed workflows and permission behavior, see [workflows](./WORKFLOWS.md), [authentication](./AUTHENTICATION.md), and [security](./SECURITY.md).

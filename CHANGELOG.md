@@ -2,6 +2,14 @@
 
 All notable project changes are recorded here.
 
+## [Phase 13] - Documentation overhaul (unreleased)
+
+- Added the documentation hub, authentication guide, workflow guide, developer quickstart, and owner-confirmation checklist.
+- Updated architecture and database documentation with verified system and entity relationship Mermaid diagrams.
+- Reconciled the API reference, testing guide, roadmap, information architecture, and security boundaries to source-verified implementation behavior.
+- Added source-verified Phase 12 release and test evidence without changing application code, migrations, database state, dependencies, staging state, or Git history.
+- Documentation-only implementation remains unstaged and uncommitted pending separate release approval.
+
 ## [0.1.0] - Phase 0
 
 - Bootstrapped the React/Vite frontend and Django REST backend foundations.

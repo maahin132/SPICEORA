@@ -65,7 +65,7 @@ The public website is intentionally tailored as a trade and export showcase—no
 
 This path requires **no database service installation** (no MySQL needed). It runs isolated in-memory SQLite backend tests and Vitest frontend tests.
 
-#### 1. Backend Automated Tests (99 API tests + Settings Security)
+#### 1. Backend Automated Tests (100 Django tests on isolated SQLite plus settings coverage)
 From the repository root:
 ```powershell
 cd backend

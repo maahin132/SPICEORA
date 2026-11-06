@@ -141,6 +141,139 @@ Retire products by setting `is_published=false` or deactivating their category, 
 - Grant the runtime account only the permissions required for runtime and planned migrations. Do not run the application as MySQL administrator; consider a separate migration identity in production.
 - Do not store secrets in this schema. Keep credentials and Django secrets outside source control.
 
+## Verified entity relationship diagram
+
+```mermaid
+erDiagram
+    PRODUCT_CATEGORY ||--o{ PRODUCT : contains
+    PRODUCT_CATEGORY ||--o{ EXPORT_ENQUIRY : classifies
+    PRODUCT o|--o{ EXPORT_ENQUIRY : optionally_selected
+
+    AUTH_USER ||--o| ACCOUNT_PROFILE : has
+    AUTH_USER ||--o{ OTP_CHALLENGE : receives
+
+    FARM ||--o{ CROP_SEASON : hosts
+    CROP_SEASON ||--o{ HARVEST : records
+    HARVEST ||--o{ PRODUCTION_BATCH : allocates
+    PRODUCTION_BATCH ||--o{ PROCESSING_RECORD : documents
+    PRODUCTION_BATCH ||--o{ INVENTORY_MOVEMENT : records
+
+    PRODUCT_CATEGORY {
+        bigint id PK
+        varchar slug UK
+        varchar name UK
+        integer sort_order
+        boolean is_active
+    }
+
+    PRODUCT {
+        bigint id PK
+        bigint category_id FK
+        varchar slug UK
+        varchar name
+        boolean is_published
+        integer sort_order
+    }
+
+    EXPORT_ENQUIRY {
+        bigint id PK
+        uuid public_reference UK
+        bigint category_id FK
+        bigint product_id FK
+        varchar status
+        decimal quantity
+        varchar quantity_unit
+    }
+
+    AUTH_USER {
+        integer id PK
+        varchar username UK
+        varchar email
+        boolean is_active
+        boolean is_staff
+    }
+
+    ACCOUNT_PROFILE {
+        bigint id PK
+        integer user_id FK
+        varchar email_key UK
+        varchar mobile_number UK
+        boolean email_verified
+        boolean mobile_verified
+    }
+
+    OTP_CHALLENGE {
+        uuid id PK
+        integer user_id FK
+        varchar channel
+        varchar purpose
+        datetime expires_at
+        integer attempts
+    }
+
+    FARM {
+        bigint id PK
+        varchar reference UK
+        varchar name
+        text location
+        decimal area
+        varchar area_unit
+        boolean is_active
+    }
+
+    CROP_SEASON {
+        bigint id PK
+        varchar reference UK
+        bigint farm_id FK
+        varchar crop_name
+        date planting_date
+        date expected_harvest_date
+        varchar status
+    }
+
+    HARVEST {
+        bigint id PK
+        varchar reference UK
+        bigint crop_season_id FK
+        date harvest_date
+        decimal quantity
+        varchar quantity_unit
+    }
+
+    PRODUCTION_BATCH {
+        bigint id PK
+        varchar reference UK
+        bigint harvest_id FK
+        varchar product_name
+        date batch_date
+        decimal initial_quantity
+        varchar quantity_unit
+        varchar status
+    }
+
+    PROCESSING_RECORD {
+        bigint id PK
+        bigint batch_id FK
+        varchar activity
+        date activity_date
+        decimal input_quantity
+        decimal output_quantity
+    }
+
+    INVENTORY_MOVEMENT {
+        bigint id PK
+        varchar reference UK
+        bigint batch_id FK
+        varchar movement_type
+        decimal quantity
+        varchar quantity_unit
+        date movement_date
+        varchar reason
+    }
+```
+
+Mermaid field lists summarize key implementation columns; Django timestamps, text notes, validation fields, and indexes are described in the model sections above.
+
 ## Owner confirmation required
 
 - Which of the six requested categories have publishable products at launch?

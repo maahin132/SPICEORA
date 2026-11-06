@@ -75,6 +75,17 @@ Collect only the contact and business information needed to respond to a buyer. 
 - Run reviewed migrations as a controlled deployment step; test backup and rollback plans.
 - Do not include production personal data in fixtures, screenshots, tests, or development environments.
 
+## Verified Phase 12 protection boundaries
+
+- Customer users are denied access to protected operations APIs. A customer login can succeed while the Harvest operations endpoint returns `403 Forbidden` because the user lacks staff/model authorization.
+- Independent `view`, `add`, and `change` Django model permissions remain server-side requirements. Frontend action visibility is not authorization.
+- New Harvest creation is rejected for `closed` and `cancelled` Crop Seasons at both serializer/model validation boundaries.
+- Existing Harvest records remain readable for authorized view users regardless of later Season status.
+- A Harvest with one or more ProductionBatch records reports `historical_locked=true` from the backend.
+- Historical origin, Season, harvest date, quantity, and unit fields cannot be changed after downstream ProductionBatch creation. Notes remain editable under `change_harvest` permission.
+- Crop Season harvesting eligibility filtering occurs before pagination, preventing ineligible records from incorrectly consuming pages.
+- The repository's automated customer-denial test and browser verification used isolated test data. Actual session expiration was not separately verified; logout was tested separately.
+
 ## Launch security gates
 
 - Test validation and rate limits, authorization boundaries, CSRF/CORS policy, safe error responses, and PII redaction.

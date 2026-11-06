@@ -111,6 +111,44 @@ Use a consistent JSON error envelope and appropriate HTTP status codes. Distingu
 
 Keep `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, database credentials, Gmail SMTP login/App Password, allowed origins, and any future rate limits in environment-specific secret/configuration stores. Never place secrets in frontend build variables, source control, or browser responses. Personal Gmail SMTP is for low-volume testing, not a production delivery guarantee. Production requires HTTPS, a production WSGI/ASGI server, controlled migrations, static/media storage policy, backups, logs/alerts, restore tests, and a documented rollback plan. Hosting provider and topology require owner approval.
 
+## Verified system architecture
+
+```mermaid
+flowchart LR
+    Browser[React 19 SPA / Vite]
+    Browser -->|same-origin or configured API origin| Django[Django 5.2 application]
+    Browser -->|static assets and development proxy| Vite[Vite development server]
+    Vite --> Django
+
+    Django -->|Django REST Framework JSON| Browser
+    Django -->|Django ORM| MySQL[(MySQL 8 development database)]
+    Django --> Auth[Django session authentication]
+    Django --> CSRF[Django CSRF protection]
+    Django --> Admin[Django Admin]
+    Django -->|optional development configuration| Gmail[Gmail SMTP / App Password]
+
+    Public[Public catalogue, health and enquiry APIs] --> Django
+    Customer[Registration, OTP, login and recovery APIs] --> Django
+    Staff[Protected staff operations APIs] --> Django
+    Staff --> Permissions[Per-model Django permissions]
+
+    Django --> Catalogue[Product and category models]
+    Django --> Enquiries[Export enquiry model]
+    Django --> Accounts[AccountProfile and OTPChallenge]
+    Django --> Operations[Farm and inventory models]
+
+    Operations --> Trace[Farm to CropSeason to Harvest]
+    Trace --> Batch[ProductionBatch]
+    Batch --> Processing[ProcessingRecord]
+    Batch --> Ledger[InventoryMovement ledger]
+
+    Browser --> PublicUI[Homepage, catalogue and contact UI]
+    Browser --> AccountUI[Registration and login UI]
+    Browser --> OperationsUI[Protected operations UI]
+```
+
+The diagram represents the implemented application topology. Development media and static delivery may use Django/Vite configuration; production hosting, CDN, backup, monitoring, and distributed cache topology are not yet selected or verified.
+
 ## Deferred choices
 
 - Hosting provider, domain, DNS, CDN/WAF, storage and email delivery
